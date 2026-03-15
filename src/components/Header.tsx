@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/sign-to-text', label: 'Sign to Text' },
   { href: '/dictionary', label: 'Dictionary' },
   { href: '/about', label: 'About' },
 ];
