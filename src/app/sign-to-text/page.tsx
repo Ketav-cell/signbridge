@@ -3,18 +3,15 @@
 /**
  * /sign-to-text
  *
- * Real-time sign language → text page.
+ * Real-time sign language → text page (fully browser-native, no Python server).
  *
  * Data flow:
- *  1. useWebcam      → getUserMedia → attaches stream to <video>
- *  2. useSignRecognition → every 150ms captures a frame from <video>,
- *                          sends base64 JPEG over WebSocket to inference server
- *  3. inference server   → MediaPipe detects 21 hand landmarks
- *                          → CNN predicts letter (A-Z) + confidence
- *  4. result back to hook → page state updates
- *  5. "stable letter" logic: same letter held for STABLE_THRESHOLD frames
+ *  1. useWebcam        → getUserMedia → attaches stream to <video>
+ *  2. useHandDetection → every 150ms sends <video> frame to @mediapipe/hands (WASM)
+ *                        → 21 landmarks → classifyASLLetter() → letter + confidence
+ *  3. "stable letter" logic: same letter held for STABLE_THRESHOLD frames (~900ms)
  *     → letter appended to currentWord (with cooldown to prevent spamming)
- *  6. Space button → moves currentWord into words[]
+ *  4. Space button → moves currentWord into words[]
  *     Backspace    → removes last char from currentWord
  *     Clear        → resets everything
  */
@@ -26,32 +23,49 @@ import Header from '@/components/Header';
 import WebcamCapture from '@/components/SignToText/WebcamCapture';
 import RecognitionDisplay from '@/components/SignToText/RecognitionDisplay';
 import { useWebcam } from '@/hooks/useWebcam';
-import { useSignRecognition } from '@/hooks/useSignRecognition';
+import { useHandDetection } from '@/hooks/useHandDetection';
+
+async function interpretLetters(letters: string): Promise<string> {
+  const res = await fetch('/api/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ letters }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? 'Interpret failed');
+  return data.result as string;
+}
 
 // ── Letter-stability settings ────────────────────────────────────────────────
 /** How many consecutive matching detections before we commit a letter. */
-const STABLE_THRESHOLD = 6; // ~900 ms at 150 ms/frame
+const STABLE_THRESHOLD = 3; // ~450 ms at 150 ms/frame
 /** Cooldown frames after committing a letter before the next one can be added. */
-const COOLDOWN_FRAMES = 8; // ~1.2 s
+const COOLDOWN_FRAMES = 5; // ~750 ms
 
 export default function SignToTextPage() {
   // Webcam
   const { videoRef, isReady, error: cameraError, startCamera, stopCamera } =
     useWebcam();
 
-  // Sign recognition
+  // Browser-native hand detection (no Python server required)
   const {
-    result,
-    isConnected,
+    letter,
+    confidence,
+    handDetected,
+    isModelLoading,
+    error: modelError,
     isRunning,
-    connectionError,
-    startRecognition,
-    stopRecognition,
-  } = useSignRecognition();
+    startDetection,
+    stopDetection,
+  } = useHandDetection();
 
   // Word builder state
   const [currentWord, setCurrentWord] = useState('');
   const [words, setWords] = useState<string[]>([]);
+
+  // AI interpretation state
+  const [interpreted, setInterpreted] = useState<string | null>(null);
+  const [isInterpreting, setIsInterpreting] = useState(false);
 
   // Stability tracking (not in React state — updated every frame)
   const stableRef = useRef({ letter: '', count: 0, cooldown: 0 });
@@ -59,8 +73,6 @@ export default function SignToTextPage() {
 
   // ── Letter stability logic ──────────────────────────────────────────────
   useEffect(() => {
-    const { letter, handDetected } = result;
-
     if (!handDetected || !letter) {
       stableRef.current = { letter: '', count: 0, cooldown: 0 };
       setStableProgress(0);
@@ -87,41 +99,48 @@ export default function SignToTextPage() {
     setStableProgress(progress);
 
     if (s.count >= STABLE_THRESHOLD) {
-      // Commit the letter
       setCurrentWord((w) => w + letter);
       s.count = 0;
       s.cooldown = COOLDOWN_FRAMES;
       setStableProgress(0);
     }
-  }, [result]);
+  }, [letter, handDetected]);
 
   // ── Controls ────────────────────────────────────────────────────────────
   const handleStart = useCallback(async () => {
     await startCamera();
     if (videoRef.current) {
-      startRecognition(videoRef.current);
+      await startDetection(videoRef.current);
     }
-  }, [startCamera, startRecognition, videoRef]);
+  }, [startCamera, startDetection, videoRef]);
 
-  const handleStop = useCallback(() => {
-    stopRecognition();
-    stopCamera();
-    stableRef.current = { letter: '', count: 0, cooldown: 0 };
-    setStableProgress(0);
-  }, [stopRecognition, stopCamera]);
-
-  // Start recognition once video is ready (handles async delay between
+  // Start detection once video is ready (handles async gap between
   // startCamera resolving and the video element being populated)
   useEffect(() => {
-    if (isReady && isRunning === false && videoRef.current) {
-      startRecognition(videoRef.current);
+    if (isReady && !isRunning && videoRef.current) {
+      startDetection(videoRef.current);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady]);
 
+  const handleStop = useCallback(() => {
+    stopDetection();
+    stopCamera();
+    stableRef.current = { letter: '', count: 0, cooldown: 0 };
+    setStableProgress(0);
+  }, [stopDetection, stopCamera]);
+
   const handleBackspace = useCallback(() => {
     setCurrentWord((w) => w.slice(0, -1));
   }, []);
+
+  // Immediately commit the currently-detected letter (no stability wait)
+  const handleConfirmLetter = useCallback(() => {
+    if (!letter) return;
+    setCurrentWord((w) => w + letter);
+    stableRef.current = { letter: '', count: 0, cooldown: COOLDOWN_FRAMES };
+    setStableProgress(0);
+  }, [letter]);
 
   const handleSpace = useCallback(() => {
     if (!currentWord) return;
@@ -132,9 +151,38 @@ export default function SignToTextPage() {
   const handleClear = useCallback(() => {
     setCurrentWord('');
     setWords([]);
+    setInterpreted(null);
     stableRef.current = { letter: '', count: 0, cooldown: 0 };
     setStableProgress(0);
   }, []);
+
+  const handleInterpret = useCallback(async () => {
+    const raw = words.join('') + currentWord;
+    if (!raw) return;
+    setIsInterpreting(true);
+    try {
+      const result = await interpretLetters(raw);
+      setInterpreted(result);
+    } catch (err) {
+      setInterpreted(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsInterpreting(false);
+    }
+  }, [words, currentWord]);
+
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'Backspace') { e.preventDefault(); handleBackspace(); }
+      if (e.key === ' ')         { e.preventDefault(); handleSpace(); }
+      if (e.key === 'Enter')     { e.preventDefault(); handleInterpret(); }
+      if (e.key === 'c' || e.key === 'C') { handleConfirmLetter(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleBackspace, handleSpace, handleInterpret, handleConfirmLetter]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -171,9 +219,8 @@ export default function SignToTextPage() {
         <div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-300">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Hold each letter sign steady for ~1 second to confirm it.
-            Press <strong>Space</strong> to finish a word.
-            The inference server must be running on port&nbsp;8000.
+            Sign letters one at a time — each is confirmed after ~1 second.
+            When done, click <strong>Interpret with AI</strong> (or press <strong>Enter</strong>) and Claude will add spaces automatically.
           </p>
         </div>
 
@@ -184,25 +231,29 @@ export default function SignToTextPage() {
             videoRef={videoRef}
             isReady={isReady}
             isRunning={isRunning}
-            isConnected={isConnected}
-            handDetected={result.handDetected}
+            isModelLoading={isModelLoading}
+            handDetected={handDetected}
             cameraError={cameraError}
-            connectionError={connectionError}
+            modelError={modelError}
             onStart={handleStart}
             onStop={handleStop}
           />
 
           {/* Right: recognition output */}
           <RecognitionDisplay
-            currentLetter={result.letter}
-            confidence={result.confidence}
-            handDetected={result.handDetected}
+            currentLetter={letter}
+            confidence={confidence}
+            handDetected={handDetected}
             stableProgress={stableProgress}
             currentWord={currentWord}
             words={words}
+            interpreted={interpreted}
+            isInterpreting={isInterpreting}
             onBackspace={handleBackspace}
             onSpace={handleSpace}
             onClear={handleClear}
+            onInterpret={handleInterpret}
+            onConfirmLetter={handleConfirmLetter}
           />
         </div>
 
@@ -214,27 +265,23 @@ export default function SignToTextPage() {
           <ol className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
             <li>
               <span className="mr-1 font-bold text-primary-600">1.</span>
-              Make sure the inference server is running:{' '}
-              <code className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700">
-                cd inference &amp;&amp; uvicorn server:app --port 8000
-              </code>
-            </li>
-            <li>
-              <span className="mr-1 font-bold text-primary-600">2.</span>
               Click <strong>Start Recognition</strong> and allow camera access.
             </li>
             <li>
-              <span className="mr-1 font-bold text-primary-600">3.</span>
+              <span className="mr-1 font-bold text-primary-600">2.</span>
               Hold an ASL letter sign steady — the ring fills as it stabilises (~1 s).
             </li>
             <li>
+              <span className="mr-1 font-bold text-primary-600">3.</span>
+              The letter is added automatically. Sign all letters without worrying about spaces.
+            </li>
+            <li>
               <span className="mr-1 font-bold text-primary-600">4.</span>
-              The letter is added automatically. Press <strong>Space</strong> to finish a word.
+              Press <strong>Enter</strong> (or click <strong>Interpret with AI</strong>) — Claude will add spaces for you.
             </li>
             <li>
               <span className="mr-1 font-bold text-primary-600">5.</span>
-              Use <strong>Backspace</strong> to undo the last letter,{' '}
-              <strong>Clear</strong> to start over.
+              <strong>Backspace</strong> removes the last letter, <strong>Space</strong> adds a manual word break, <strong>Clear</strong> resets everything.
             </li>
           </ol>
         </section>

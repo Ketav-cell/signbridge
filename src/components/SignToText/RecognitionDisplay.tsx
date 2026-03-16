@@ -1,35 +1,27 @@
 'use client';
 
 import React from 'react';
-import { Delete, Space, RotateCcw } from 'lucide-react';
+import { Delete, Space, RotateCcw, Sparkles, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 interface RecognitionDisplayProps {
-  /** Letter currently being detected by the model */
   currentLetter: string | null;
   confidence: number;
   handDetected: boolean;
-  /** Progress toward auto-confirming the current letter (0–1) */
   stableProgress: number;
-  /** Word being built letter by letter */
   currentWord: string;
-  /** List of confirmed words in the sentence */
   words: string[];
+  interpreted: string | null;
+  isInterpreting: boolean;
   onBackspace: () => void;
   onSpace: () => void;
   onClear: () => void;
+  onInterpret: () => void;
+  onConfirmLetter: () => void;
 }
 
-/**
- * Shows:
- *  - The letter currently being detected (large, animated)
- *  - A radial progress ring that fills as the letter stabilises
- *  - The word being built character by character
- *  - The sentence (list of completed words)
- *  - Action buttons: Backspace, Space (confirm word), Clear
- */
 export default function RecognitionDisplay({
   currentLetter,
   confidence,
@@ -37,12 +29,16 @@ export default function RecognitionDisplay({
   stableProgress,
   currentWord,
   words,
+  interpreted,
+  isInterpreting,
   onBackspace,
   onSpace,
   onClear,
+  onInterpret,
+  onConfirmLetter,
 }: RecognitionDisplayProps) {
-  const sentence = words.join(' ');
-  const circumference = 2 * Math.PI * 36; // radius = 36
+  const rawLetters = words.join('') + currentWord;
+  const circumference = 2 * Math.PI * 36;
 
   return (
     <div className="flex flex-col gap-5">
@@ -50,22 +46,15 @@ export default function RecognitionDisplay({
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800">
         {/* Circular progress ring + letter */}
         <div className="relative flex h-28 w-28 items-center justify-center">
-          {/* SVG ring */}
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 80 80">
-            {/* Track */}
             <circle
               cx="40" cy="40" r="36"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="5"
+              fill="none" stroke="currentColor" strokeWidth="5"
               className="text-gray-200 dark:text-gray-700"
             />
-            {/* Progress arc */}
             <circle
               cx="40" cy="40" r="36"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="5"
+              fill="none" stroke="currentColor" strokeWidth="5"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - stableProgress)}
@@ -73,7 +62,6 @@ export default function RecognitionDisplay({
             />
           </svg>
 
-          {/* Letter */}
           <AnimatePresence mode="wait">
             <motion.span
               key={currentLetter ?? 'empty'}
@@ -114,25 +102,38 @@ export default function RecognitionDisplay({
         )}
         {handDetected && stableProgress < 1 && (
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Hold still to confirm letter…
+            Hold still — or tap the button below
           </p>
         )}
+
+        {/* Manual confirm — no need to hold steady */}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onConfirmLetter}
+          disabled={!currentLetter || !handDetected}
+          className="gap-1.5 text-xs"
+          title="Add this letter now (key: C)"
+        >
+          <Check className="h-3.5 w-3.5" />
+          Confirm &ldquo;{currentLetter ?? '?'}&rdquo; (C)
+        </Button>
       </div>
 
-      {/* ── Word being built ──────────────────────────────────────────── */}
+      {/* ── Raw letter stream ──────────────────────────────────────────── */}
       <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-800">
         <p className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-          Current word
+          Signed letters
         </p>
         <div className="flex min-h-[2.5rem] flex-wrap gap-1">
-          {currentWord.length === 0 ? (
+          {rawLetters.length === 0 ? (
             <span className="text-sm text-gray-300 dark:text-gray-600">
               (start signing…)
             </span>
           ) : (
-            currentWord.split('').map((ch, i) => (
+            rawLetters.split('').map((ch, i) => (
               <motion.span
-                key={`${ch}-${i}`}
+                key={i}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 text-sm font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -151,9 +152,9 @@ export default function RecognitionDisplay({
           variant="outline"
           size="sm"
           onClick={onBackspace}
-          disabled={currentWord.length === 0}
+          disabled={rawLetters.length === 0}
           className="gap-1.5"
-          title="Delete last letter"
+          title="Delete last letter (Backspace)"
         >
           <Delete className="h-4 w-4" />
           Back
@@ -162,9 +163,9 @@ export default function RecognitionDisplay({
           variant="outline"
           size="sm"
           onClick={onSpace}
-          disabled={currentWord.length === 0}
+          disabled={rawLetters.length === 0}
           className="gap-1.5"
-          title="Confirm word and add space"
+          title="Manual word break (Space)"
         >
           <Space className="h-4 w-4" />
           Space
@@ -181,17 +182,54 @@ export default function RecognitionDisplay({
         </Button>
       </div>
 
-      {/* ── Full sentence ─────────────────────────────────────────────── */}
-      {(words.length > 0 || currentWord.length > 0) && (
+      {/* ── Interpret button ──────────────────────────────────────────── */}
+      <Button
+        onClick={onInterpret}
+        disabled={rawLetters.length === 0 || isInterpreting}
+        className="w-full gap-2"
+        title="Let AI add spaces and figure out the words (Enter)"
+      >
+        {isInterpreting ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Interpreting…
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4" />
+            Interpret with AI
+          </>
+        )}
+      </Button>
+
+      {/* ── AI interpreted result ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {interpreted && (
+          <motion.div
+            className="rounded-2xl border border-primary-200 bg-primary-50 px-5 py-4 dark:border-primary-800/50 dark:bg-primary-900/20"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+          >
+            <p className="mb-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+              AI interpretation
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              {interpreted}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Manual sentence (if user used Space) ─────────────────────── */}
+      {words.length > 0 && (
         <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-800">
           <p className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-            Sentence
+            Manual words
           </p>
           <p className="text-base leading-relaxed text-gray-900 dark:text-white">
-            {sentence}
-            {currentWord && (
-              <span className="text-primary-500"> {currentWord}</span>
-            )}
+            {words.join(' ')}
+            {currentWord && <span className="text-primary-500"> {currentWord}</span>}
             <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-primary-500" />
           </p>
         </div>
