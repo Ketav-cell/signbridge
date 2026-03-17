@@ -7,12 +7,12 @@ import {
   SkipForward,
   SkipBack,
   RotateCcw,
-  Repeat,
   Loader2,
   Hand,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
@@ -20,6 +20,15 @@ import { useSignPlayer } from '@/hooks/useSignPlayer';
 import Header from '@/components/Header';
 import VoiceInput from '@/components/VoiceInput';
 import { Button } from '@/components/ui/button';
+
+const AvatarSignPlayer = dynamic(() => import('@/components/AvatarSignPlayer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center">
+      <Hand className="h-16 w-16 text-primary-300 animate-pulse sm:h-20 sm:w-20" />
+    </div>
+  ),
+});
 
 export default function HomePage() {
   const {
@@ -138,9 +147,14 @@ export default function HomePage() {
             >
               {currentSign ? (
                 <>
-                  {/* Sign Visual - placeholder with hand icon */}
-                  <div className="flex h-36 w-36 items-center justify-center rounded-2xl bg-white/60 dark:bg-gray-800/60 sm:h-44 sm:w-44">
-                    <Hand className="h-16 w-16 text-primary-500 sm:h-20 sm:w-20" />
+                  {/* Sign Visual - 3D avatar */}
+                  <div className="h-52 w-52 overflow-hidden rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 sm:h-64 sm:w-64">
+                    <AvatarSignPlayer
+                      currentSign={currentSign}
+                      isPlaying={isPlaying}
+                      speed={playback.speed}
+                      className="h-full w-full"
+                    />
                   </div>
 
                   {/* Sign Info */}
