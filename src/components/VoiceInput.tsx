@@ -55,9 +55,7 @@ export default function VoiceInput() {
     }
   }, [speechError, setStoreError]);
 
-  const currentLanguage = languages.find(
-    (l) => l.code === settings.inputLanguage
-  );
+  const currentLanguage = languages.find((l) => l.code === settings.inputLanguage);
   const speechCode = currentLanguage?.speechCode || 'en-US';
 
   const processTranscript = useCallback(
@@ -71,10 +69,7 @@ export default function VoiceInput() {
       try {
         let englishText = text;
 
-        if (
-          settings.inputLanguage !== 'en' &&
-          settings.inputLanguage !== 'auto'
-        ) {
+        if (settings.inputLanguage !== 'en' && settings.inputLanguage !== 'auto') {
           const translateRes = await fetch('/api/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -110,9 +105,7 @@ export default function VoiceInput() {
         const signData = await signRes.json();
         setSignSequence(signData.sequence);
       } catch (err) {
-        setStoreError(
-          err instanceof Error ? err.message : 'An error occurred during processing'
-        );
+        setStoreError(err instanceof Error ? err.message : 'An error occurred during processing');
       } finally {
         setIsProcessing(false);
       }
@@ -161,7 +154,7 @@ export default function VoiceInput() {
 
   if (!isSupported) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-yellow-300 bg-yellow-50 p-6 text-center dark:border-yellow-700 dark:bg-yellow-900/20">
+      <div className="surface-subtle flex flex-col items-center gap-4 p-6 text-center">
         <AlertCircle className="h-10 w-10 text-yellow-500" />
         <div>
           <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
@@ -177,29 +170,39 @@ export default function VoiceInput() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="relative flex items-center justify-center">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+            Input language
+          </p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Voice recognition and translation still follow your current settings.
+          </p>
+        </div>
+        <select
+          value={settings.inputLanguage}
+          onChange={handleLanguageChange}
+          className={cn(
+            'w-full rounded-full border border-black/[0.08] bg-white/80 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-200/50 dark:border-white/10 dark:bg-white/[0.06] dark:text-gray-100 dark:focus:ring-sky-500/20 sm:w-auto sm:min-w-[220px]'
+          )}
+        >
+          {languages.map((language) => (
+            <option key={language.code} value={language.code}>
+              {language.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="surface-subtle relative flex w-full flex-col items-center justify-center overflow-hidden px-6 py-10">
         <AnimatePresence>
           {isListening && (
             <motion.div
-              className="absolute inset-0 rounded-full bg-red-500/20"
+              className="absolute inset-0 m-auto h-36 w-36 rounded-full bg-sky-500/10"
               initial={{ scale: 1, opacity: 0.6 }}
-              animate={{
-                scale: [1, 1.4, 1],
-                opacity: [0.6, 0, 0.6],
-              }}
+              animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
               exit={{ scale: 1, opacity: 0 }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              style={{
-                width: '80px',
-                height: '80px',
-                margin: 'auto',
-                inset: 0,
-                position: 'absolute',
-              }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
             />
           )}
         </AnimatePresence>
@@ -207,22 +210,23 @@ export default function VoiceInput() {
         <motion.button
           onClick={isListening ? handleStop : handleStart}
           className={cn(
-            'relative z-10 flex items-center justify-center rounded-full shadow-lg transition-colors',
-            'h-20 w-20 sm:h-24 sm:w-24',
-            'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600/50',
+            'relative z-10 flex h-24 w-24 items-center justify-center rounded-full border text-white shadow-[0_24px_60px_-24px_rgba(15,23,42,0.6)] transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-400/30 sm:h-28 sm:w-28',
             isListening
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-primary-600 text-white hover:bg-primary-700'
+              ? 'border-red-400 bg-red-500 hover:bg-red-600'
+              : 'border-slate-900 bg-slate-950 hover:bg-slate-800 dark:border-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100'
           )}
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.97 }}
           aria-label={isListening ? 'Stop recording' : 'Start recording'}
         >
-          {isListening ? (
-            <MicOff className="h-8 w-8 sm:h-10 sm:w-10" />
-          ) : (
-            <Mic className="h-8 w-8 sm:h-10 sm:w-10" />
-          )}
+          {isListening ? <MicOff className="h-9 w-9 sm:h-10 sm:w-10" /> : <Mic className="h-9 w-9 sm:h-10 sm:w-10" />}
         </motion.button>
+
+        <p className="mt-5 text-sm font-medium text-gray-900 dark:text-white">
+          {isListening ? 'Listening now… tap to stop' : 'Tap to start listening'}
+        </p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Your existing speech recognition, translation, and sign mapping workflow remains unchanged.
+        </p>
       </div>
 
       <AnimatePresence>
@@ -234,100 +238,30 @@ export default function VoiceInput() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <WaveformVisualizer
-              frequencyData={frequencyData}
-              isActive={audioActive}
-            />
+            <WaveformVisualizer frequencyData={frequencyData} isActive={audioActive} />
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {isListening && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-          >
-            <Button
-              variant="destructive"
-              size="lg"
-              onClick={handleStop}
-              aria-label="Stop recording"
-              className="gap-2"
-            >
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+            <Button variant="destructive" size="lg" onClick={handleStop} aria-label="Stop recording" className="gap-2">
               <Square className="h-4 w-4" />
-              Stop Recording
+              Stop recording
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-xs">
-        <label
-          htmlFor="language-select"
-          className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400"
-        >
-          Input Language
-        </label>
-        <select
-          id="language-select"
-          value={settings.inputLanguage}
-          onChange={handleLanguageChange}
-          className={cn(
-            'w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm',
-            'text-gray-900 shadow-sm transition-colors',
-            'focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20',
-            'dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100'
-          )}
-          aria-label="Select input language"
-        >
-          {languages.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.name} {lang.nativeName !== lang.name ? `(${lang.nativeName})` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <AnimatePresence>
-        {(interimTranscript || transcript) && (
-          <motion.div
-            className="w-full max-w-lg rounded-xl bg-gray-100 px-4 py-3 dark:bg-gray-800"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-          >
-            {transcript && (
-              <p className="text-sm text-gray-900 dark:text-gray-100">
-                {transcript}
-              </p>
-            )}
-            {interimTranscript && (
-              <p className="text-sm italic text-gray-500 dark:text-gray-400">
-                {interimTranscript}
-              </p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {speechError && (
-          <motion.div
-            className="flex w-full max-w-lg items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-900/20"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            role="alert"
-          >
-            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-            <p className="text-sm text-red-700 dark:text-red-300">
-              {speechError}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {(interimTranscript || transcript) && (
+        <div className="surface-subtle w-full px-4 py-4 text-left">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Live transcript</p>
+          <p className="mt-2 min-h-[3rem] text-sm leading-7 text-gray-900 dark:text-gray-100">
+            {interimTranscript || transcript || 'Start speaking to see your words appear here.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

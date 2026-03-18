@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Hand, Sun, Moon, Settings, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ const navLinks = [
 ];
 
 export default function Header() {
+  const pathname = usePathname();
   const { settings, updateSettings } = useAppStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -32,127 +34,114 @@ export default function Header() {
   };
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-50 w-full border-b border-white/10',
-        'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl backdrop-saturate-150',
-        'supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60'
-      )}
-    >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
+    <header className="sticky top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/70 bg-white/75 px-3 py-3 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-black/30">
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white"
+          className="flex items-center gap-3 rounded-full px-3 py-1.5 text-base font-semibold tracking-[-0.03em] text-gray-950 transition-opacity hover:opacity-80 dark:text-white"
           aria-label="SignBridge home"
         >
-          <Hand className="h-7 w-7 text-primary-600" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950">
+            <Hand className="h-5 w-5" />
+          </span>
           <span>SignBridge</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Main navigation">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                'text-gray-600 hover:text-gray-900 hover:bg-gray-100',
-                'dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden items-center gap-1 rounded-full bg-black/[0.03] p-1 dark:bg-white/[0.04] md:flex" aria-label="Main navigation">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium transition-all',
+                  isActive
+                    ? 'bg-white text-gray-950 shadow-sm dark:bg-white dark:text-slate-950'
+                    : 'text-gray-500 hover:text-gray-950 dark:text-gray-300 dark:hover:text-white'
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Desktop Actions */}
         <div className="hidden items-center gap-2 md:flex">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             onClick={toggleDarkMode}
             aria-label={settings.darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="rounded-full"
           >
-            {settings.darkMode ? (
-              <Sun className="h-5 w-5 text-yellow-400" />
-            ) : (
-              <Moon className="h-5 w-5 text-gray-600" />
-            )}
+            {settings.darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             aria-label="Open settings"
+            className="rounded-full"
           >
-            <Settings className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            <Settings className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 md:hidden">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             onClick={toggleDarkMode}
             aria-label={settings.darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="rounded-full"
           >
-            {settings.darkMode ? (
-              <Sun className="h-5 w-5 text-yellow-400" />
-            ) : (
-              <Moon className="h-5 w-5 text-gray-600" />
-            )}
+            {settings.darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
+            className="rounded-full"
           >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            ) : (
-              <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            )}
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden border-t border-gray-200 dark:border-gray-700 md:hidden"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="mx-auto mt-3 max-w-7xl overflow-hidden rounded-[28px] border border-white/70 bg-white/90 p-3 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/80 md:hidden"
             aria-label="Mobile navigation"
           >
-            <div className="space-y-1 px-4 py-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
-                    'text-gray-600 hover:text-gray-900 hover:bg-gray-100',
-                    'dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <div className="space-y-1">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'block rounded-2xl px-4 py-3 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                        : 'text-gray-600 hover:bg-black/[0.04] hover:text-gray-950 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white'
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
-                  'text-gray-600 hover:text-gray-900 hover:bg-gray-100',
-                  'dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'
-                )}
+                className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-black/[0.04] hover:text-gray-950 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
                 aria-label="Open settings"
               >
                 <Settings className="h-4 w-4" />
