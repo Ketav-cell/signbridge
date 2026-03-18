@@ -15,6 +15,7 @@ type DictionaryEntry = {
   signLanguage: string;
   category: string;
   description: string;
+  mediaUrl: string;
   duration: number;
   synonyms: string[];
 };
@@ -22,37 +23,31 @@ type DictionaryEntry = {
 const entries = dictionaryData as DictionaryEntry[];
 
 const CATEGORY_LABELS: Record<string, string> = {
+  alphabet: 'Alphabet',
   greetings: 'Greetings',
   common: 'Common',
   feelings: 'Feelings',
   actions: 'Actions',
-  pronouns: 'Pronouns',
-  verbs: 'Verbs',
-  adjectives: 'Adjectives',
+  food: 'Food',
   places: 'Places',
   people: 'People',
   things: 'Things',
   time: 'Time',
   questions: 'Questions',
-  numbers: 'Numbers',
-  colors: 'Colors',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
+  alphabet: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   greetings: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   common: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   feelings: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
   actions: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-  pronouns: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-  verbs: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-  adjectives: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+  food: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300',
   places: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   people: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
   things: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
   time: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   questions: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  numbers: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300',
-  colors: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300',
 };
 
 export default function DictionaryPage() {
@@ -100,7 +95,7 @@ export default function DictionaryPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-                ASL Dictionary
+                ISL Dictionary
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {entries.length} signs across {categories.length} categories
@@ -173,14 +168,21 @@ export default function DictionaryPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.02, 0.3) }}
               >
-                {/* Sign visual placeholder */}
-                <div className="mb-3 flex h-28 items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700/50">
-                  <div className="flex flex-col items-center gap-1">
-                    <Hand className="h-10 w-10 text-primary-400" />
-                    <span className="text-xs font-bold tracking-widest text-primary-600 dark:text-primary-400">
-                      {entry.glossToken}
-                    </span>
-                  </div>
+                {/* Sign visual */}
+                <div className="mb-3 h-36 overflow-hidden rounded-xl bg-white dark:bg-gray-900">
+                  {entry.mediaUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={entry.mediaUrl}
+                      alt={entry.glossToken}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <Hand className="h-10 w-10 text-primary-400" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Info */}
