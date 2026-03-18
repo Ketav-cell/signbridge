@@ -93,10 +93,12 @@ type F = ReturnType<typeof features>;
 
 function scoreA(f: F) {
   if (f.numCurl < 3) return 0;
+  if (f.thumbOverKnuckles) return 0;
+  if (f.thumbUnderMiddle || f.thumbUnderIndex) return 0;
   let s = 40;
   if (f.numCurl >= 4) s += 20;
   if (f.tSide || f.tUp) s += 30;
-  if (!f.thumbOverKnuckles) s += 10;
+  s += 10;
   return s;
 }
 
@@ -178,21 +180,23 @@ function scoreL(f: F) {
 
 function scoreM(f: F) {
   if (f.numCurl < 3) return 0;
-  let s = 20;
-  if (f.thumbUnderMiddle) s += 30;
-  if (!f.tSide && !f.tUp) s += 20;
-  if (f.numCurl >= 4) s += 10;
-  if (!f.thumbOverKnuckles) s += 20;
+  if (f.thumbOverKnuckles) return 0;
+  if (f.tSide || f.tUp) return 0;
+  if (!f.thumbUnderMiddle) return 0;
+  let s = 50;
+  if (f.numCurl >= 4) s += 20;
+  s += 30;
   return s;
 }
 
 function scoreN(f: F) {
   if (f.numCurl < 2) return 0;
-  let s = 20;
-  if (f.thumbUnderIndex) s += 30;
-  if (!f.tSide && !f.tUp) s += 20;
-  if (f.numCurl >= 3) s += 10;
-  if (!f.thumbOverKnuckles) s += 20;
+  if (f.thumbOverKnuckles) return 0;
+  if (f.tSide || f.tUp) return 0;
+  if (!f.thumbUnderIndex || f.thumbUnderMiddle) return 0;
+  let s = 50;
+  if (f.numCurl >= 3) s += 20;
+  s += 30;
   return s;
 }
 
@@ -237,19 +241,21 @@ function scoreR(f: F) {
 
 function scoreS(f: F) {
   if (f.numCurl < 3) return 0;
-  let s = 30;
-  if (f.thumbOverKnuckles) s += 40;
-  if (f.numCurl >= 4) s += 10;
-  if (!f.tSide) s += 20;
+  if (!f.thumbOverKnuckles) return 0;
+  let s = 50;
+  if (f.numCurl >= 4) s += 20;
+  if (!f.tSide && !f.tUp) s += 30;
   return s;
 }
 
 function scoreT(f: F) {
   if (f.numCurl < 2) return 0;
-  let s = 20;
-  if (f.thumbUnderIndex && !f.thumbUnderMiddle) s += 40;
-  if (!f.tSide && !f.tUp) s += 20;
-  if (!f.thumbOverKnuckles) s += 20;
+  if (f.thumbOverKnuckles) return 0;
+  if (f.tSide || f.tUp) return 0;
+  if (!f.thumbUnderIndex || f.thumbUnderMiddle) return 0;
+  let s = 50;
+  if (f.numCurl >= 3) s += 20;
+  s += 30;
   return s;
 }
 
@@ -359,7 +365,7 @@ export function classifyASLLetter(lm: Landmark[]): ClassifyResult {
   if (bestScore <= 0) return { letter: '?', confidence: 0 };
 
   const margin = bestScore - secondScore;
-  const confidence = Math.min(1, Math.max(0.1, margin / 60));
+  const confidence = Math.min(1, Math.max(0.15, margin / 40));
 
   return { letter: bestLetter, confidence };
 }

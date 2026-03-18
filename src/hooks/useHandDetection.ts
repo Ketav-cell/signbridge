@@ -21,9 +21,9 @@ export type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
 const WS_URL          = 'ws://localhost:8000/ws';
 const WS_TIMEOUT_MS   = 2000;
 const DETECT_INTERVAL = 120;
-const MIN_CONFIDENCE  = 0.25;
+const MIN_CONFIDENCE  = 0.05;
 const WINDOW_SIZE     = 7;
-const MIN_VOTES       = 4;
+const MIN_VOTES       = 3;
 
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const WASM_PATH = '/tasks-vision-wasm';
