@@ -25,17 +25,6 @@ import RecognitionDisplay from '@/components/SignToText/RecognitionDisplay';
 import { useWebcam } from '@/hooks/useWebcam';
 import { useHandDetection } from '@/hooks/useHandDetection';
 
-async function interpretLetters(letters: string): Promise<string> {
-  const res = await fetch('/api/interpret', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ letters }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? 'Interpret failed');
-  return data.result as string;
-}
-
 // ── Letter-stability settings ────────────────────────────────────────────────
 /** How many consecutive matching detections before we commit a letter. */
 const STABLE_THRESHOLD = 3; // ~450 ms at 150 ms/frame
@@ -63,10 +52,6 @@ export default function SignToTextPage() {
   // Word builder state
   const [currentWord, setCurrentWord] = useState('');
   const [words, setWords] = useState<string[]>([]);
-
-  // AI interpretation state
-  const [interpreted, setInterpreted] = useState<string | null>(null);
-  const [isInterpreting, setIsInterpreting] = useState(false);
 
   // Stability tracking (not in React state — updated every frame)
   const stableRef = useRef({ letter: '', count: 0, cooldown: 0 });
@@ -152,24 +137,9 @@ export default function SignToTextPage() {
   const handleClear = useCallback(() => {
     setCurrentWord('');
     setWords([]);
-    setInterpreted(null);
     stableRef.current = { letter: '', count: 0, cooldown: 0 };
     setStableProgress(0);
   }, []);
-
-  const handleInterpret = useCallback(async () => {
-    const raw = words.join('') + currentWord;
-    if (!raw) return;
-    setIsInterpreting(true);
-    try {
-      const result = await interpretLetters(raw);
-      setInterpreted(result);
-    } catch (err) {
-      setInterpreted(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsInterpreting(false);
-    }
-  }, [words, currentWord]);
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
@@ -178,12 +148,11 @@ export default function SignToTextPage() {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
       if (e.key === 'Backspace') { e.preventDefault(); handleBackspace(); }
       if (e.key === ' ')         { e.preventDefault(); handleSpace(); }
-      if (e.key === 'Enter')     { e.preventDefault(); handleInterpret(); }
       if (e.key === 'c' || e.key === 'C') { handleConfirmLetter(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleBackspace, handleSpace, handleInterpret, handleConfirmLetter]);
+  }, [handleBackspace, handleSpace, handleConfirmLetter]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -221,7 +190,7 @@ export default function SignToTextPage() {
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             Sign letters one at a time — each is confirmed after ~1 second.
-            When done, click <strong>Interpret with AI</strong> (or press <strong>Enter</strong>) and Claude will add spaces automatically.
+            Use <strong>Space</strong> to add word breaks and <strong>Backspace</strong> to correct mistakes.
           </p>
         </div>
 
@@ -249,12 +218,9 @@ export default function SignToTextPage() {
             stableProgress={stableProgress}
             currentWord={currentWord}
             words={words}
-            interpreted={interpreted}
-            isInterpreting={isInterpreting}
             onBackspace={handleBackspace}
             onSpace={handleSpace}
             onClear={handleClear}
-            onInterpret={handleInterpret}
             onConfirmLetter={handleConfirmLetter}
           />
         </div>
@@ -279,11 +245,7 @@ export default function SignToTextPage() {
             </li>
             <li>
               <span className="mr-1 font-bold text-primary-600">4.</span>
-              Press <strong>Enter</strong> (or click <strong>Interpret with AI</strong>) — Claude will add spaces for you.
-            </li>
-            <li>
-              <span className="mr-1 font-bold text-primary-600">5.</span>
-              <strong>Backspace</strong> removes the last letter, <strong>Space</strong> adds a manual word break, <strong>Clear</strong> resets everything.
+              <strong>Backspace</strong> removes the last letter, <strong>Space</strong> adds a word break, <strong>Clear</strong> resets everything.
             </li>
           </ol>
         </section>

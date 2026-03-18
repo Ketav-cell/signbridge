@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Delete, Space, RotateCcw, Sparkles, Loader2, Check } from 'lucide-react';
+import { Delete, Space, RotateCcw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,9 @@ interface RecognitionDisplayProps {
   stableProgress: number;
   currentWord: string;
   words: string[];
-  interpreted: string | null;
-  isInterpreting: boolean;
   onBackspace: () => void;
   onSpace: () => void;
   onClear: () => void;
-  onInterpret: () => void;
   onConfirmLetter: () => void;
 }
 
@@ -29,12 +26,9 @@ export default function RecognitionDisplay({
   stableProgress,
   currentWord,
   words,
-  interpreted,
-  isInterpreting,
   onBackspace,
   onSpace,
   onClear,
-  onInterpret,
   onConfirmLetter,
 }: RecognitionDisplayProps) {
   const rawLetters = words.join('') + currentWord;
@@ -181,45 +175,6 @@ export default function RecognitionDisplay({
           Clear
         </Button>
       </div>
-
-      {/* ── Interpret button ──────────────────────────────────────────── */}
-      <Button
-        onClick={onInterpret}
-        disabled={rawLetters.length === 0 || isInterpreting}
-        className="w-full gap-2"
-        title="Let AI add spaces and figure out the words (Enter)"
-      >
-        {isInterpreting ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Interpreting…
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-4 w-4" />
-            Interpret with AI
-          </>
-        )}
-      </Button>
-
-      {/* ── AI interpreted result ─────────────────────────────────────── */}
-      <AnimatePresence>
-        {interpreted && (
-          <motion.div
-            className="rounded-2xl border border-primary-200 bg-primary-50 px-5 py-4 dark:border-primary-800/50 dark:bg-primary-900/20"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-          >
-            <p className="mb-1 text-xs font-medium text-primary-600 dark:text-primary-400">
-              AI interpretation
-            </p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {interpreted}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Manual sentence (if user used Space) ─────────────────────── */}
       {words.length > 0 && (
