@@ -2,44 +2,38 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Hand, Mic, BookOpen, Globe, Zap, Heart } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 
 const features = [
   {
-    icon: Mic,
     title: 'Voice Recognition',
     description:
       'Speak in 15+ languages and SignBridge transcribes your words in real time using the Web Speech API built into your browser.',
   },
   {
-    icon: Globe,
     title: 'Multi-Language Translation',
     description:
       'Automatically translate from any supported language into English before mapping to ASL signs, so nothing is lost in translation.',
   },
   {
-    icon: Hand,
     title: 'ASL Sign Mapping',
     description:
       'Every English word is looked up in our ASL dictionary. Words not found are automatically fingerspelled letter by letter so you never miss a word.',
   },
   {
-    icon: Zap,
     title: 'Real-Time Playback',
     description:
       'Signs play back sequentially with adjustable speed (0.5x – 1.5x). Step through manually or let the auto-play sequence run.',
   },
   {
-    icon: BookOpen,
     title: 'Growing Dictionary',
     description:
       'Our dictionary covers greetings, pronouns, verbs, adjectives, numbers, colors, family, places, and more — with new signs added regularly.',
   },
   {
-    icon: Heart,
     title: 'Accessibility First',
     description:
       'Dark mode, high-contrast support, and a clean interface designed so SignBridge works for everyone, everywhere.',
@@ -89,17 +83,10 @@ export default function AboutPage() {
             Back to Home
           </Link>
 
-          <motion.div className="mt-8 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-950 text-white dark:bg-white dark:text-slate-950">
-              <Hand className="h-10 w-10" />
-            </div>
-            <div className="hero-chip mt-6">
-              <Heart className="h-3.5 w-3.5" />
-              Built for clear communication
-            </div>
-            <h1 className="section-title mt-6">About SignBridge</h1>
-            <p className="section-copy mx-auto mt-4 max-w-3xl">
-              SignBridge is an open-source, real-time speech-to-sign-language translator built to break down communication barriers between hearing and Deaf/Hard-of-Hearing communities. The refreshed UI is intentionally minimal, but every core translation and accessibility feature stays in place.
+          <motion.div className="mt-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <h1 className="section-title">About SignBridge</h1>
+            <p className="section-copy mt-4 max-w-3xl">
+              SignBridge is an open-source, real-time speech-to-sign-language translator built to break down communication barriers between hearing and Deaf/Hard-of-Hearing communities. The interface is intentionally minimal, but every core translation and accessibility feature stays in place.
             </p>
           </motion.div>
         </section>
@@ -113,10 +100,7 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
-                <f.icon className="h-5 w-5 text-sky-500" />
-              </div>
-              <h3 className="mt-4 font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">{f.title}</h3>
+              <h3 className="font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">{f.title}</h3>
               <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">{f.description}</p>
             </motion.div>
           ))}
@@ -170,10 +154,7 @@ export default function AboutPage() {
 
         <div className="mt-8 text-center">
           <Button asChild size="lg">
-            <Link href="/" className="gap-2">
-              <Mic className="h-4 w-4" />
-              Try SignBridge now
-            </Link>
+            <Link href="/">Try SignBridge now</Link>
           </Button>
         </div>
       </main>

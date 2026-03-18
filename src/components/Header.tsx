@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Hand, Sun, Moon, Settings, Menu, X } from 'lucide-react';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
@@ -38,13 +38,10 @@ export default function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/70 bg-white/75 px-3 py-3 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-black/30">
         <Link
           href="/"
-          className="flex items-center gap-3 rounded-full px-3 py-1.5 text-base font-semibold tracking-[-0.03em] text-gray-950 transition-opacity hover:opacity-80 dark:text-white"
+          className="rounded-full px-3 py-1.5 text-base font-semibold tracking-[-0.03em] text-gray-950 transition-opacity hover:opacity-80 dark:text-white"
           aria-label="SignBridge home"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950">
-            <Hand className="h-5 w-5" />
-          </span>
-          <span>SignBridge</span>
+          SignBridge
         </Link>
 
         <nav className="hidden items-center gap-1 rounded-full bg-black/[0.03] p-1 dark:bg-white/[0.04] md:flex" aria-label="Main navigation">
@@ -76,14 +73,6 @@ export default function Header() {
             className="rounded-full"
           >
             {settings.darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label="Open settings"
-            className="rounded-full"
-          >
-            <Settings className="h-4 w-4" />
           </Button>
         </div>
 
@@ -139,14 +128,6 @@ export default function Header() {
                   </Link>
                 );
               })}
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-black/[0.04] hover:text-gray-950 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
-                aria-label="Open settings"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
             </div>
           </motion.nav>
         )}

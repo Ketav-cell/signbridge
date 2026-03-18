@@ -8,10 +8,8 @@ import {
   SkipBack,
   RotateCcw,
   Loader2,
-  Hand,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   Volume2,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -27,7 +25,7 @@ const ISLSignPlayer = dynamic(() => import('@/components/ISLSignPlayer'), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center">
-      <Hand className="h-16 w-16 animate-pulse text-sky-500 sm:h-20 sm:w-20" />
+      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
     </div>
   ),
 });
@@ -65,11 +63,7 @@ export default function HomePage() {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 pb-8 pt-8 sm:px-6 lg:px-8">
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <div className="surface-panel p-8 sm:p-10">
-            <div className="hero-chip">
-              <Sparkles className="h-3.5 w-3.5" />
-              Real-time voice to sign translation
-            </div>
-            <h1 className="section-title mt-6 max-w-3xl">
+            <h1 className="section-title max-w-3xl">
               A more minimal way to turn speech into sign language.
             </h1>
             <p className="section-copy mt-4 max-w-2xl">

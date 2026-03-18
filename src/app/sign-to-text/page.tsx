@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Hand, Info } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import Header from '@/components/Header';
 import WebcamCapture from '@/components/SignToText/WebcamCapture';
 import RecognitionDisplay from '@/components/SignToText/RecognitionDisplay';
@@ -138,11 +138,7 @@ export default function SignToTextPage() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <div className="hero-chip">
-                <Hand className="h-3.5 w-3.5" />
-                Camera-based ASL letter recognition
-              </div>
-              <h1 className="section-title mt-5">Sign to text, redesigned with more breathing room.</h1>
+              <h1 className="section-title">Sign to Text</h1>
               <p className="section-copy mt-3">
                 All recognition controls, keyboard shortcuts, stabilisation logic, and manual corrections stay intact — only the visual language is now cleaner and calmer.
               </p>

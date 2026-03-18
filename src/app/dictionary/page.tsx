@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, Hand, ArrowLeft, BookOpen } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Header from '@/components/Header';
@@ -76,11 +76,7 @@ export default function DictionaryPage() {
 
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="hero-chip">
-                <BookOpen className="h-3.5 w-3.5" />
-                Browse the sign library
-              </div>
-              <h1 className="section-title mt-5">ISL Dictionary</h1>
+                <h1 className="section-title">ISL Dictionary</h1>
               <p className="section-copy mt-3">
                 Search the full sign library with the same data, categories, and sign metadata — now presented in a simpler, quieter layout.
               </p>
@@ -134,7 +130,6 @@ export default function DictionaryPage() {
 
         {filtered.length === 0 ? (
           <div className="surface-panel mt-6 flex flex-col items-center justify-center py-20 text-center">
-            <Hand className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
             <p className="text-gray-500 dark:text-gray-400">No signs found for &ldquo;{search}&rdquo;</p>
           </div>
         ) : (
@@ -148,11 +143,9 @@ export default function DictionaryPage() {
                 transition={{ delay: Math.min(i * 0.02, 0.3) }}
               >
                 <div className="mb-4 flex h-40 items-center justify-center overflow-hidden rounded-[24px] bg-black/[0.03] dark:bg-white/[0.04]">
-                  {entry.mediaUrl ? (
+                  {entry.mediaUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={entry.mediaUrl} alt={entry.glossToken} className="h-full w-full object-contain" loading="lazy" />
-                  ) : (
-                    <Hand className="h-10 w-10 text-sky-400" />
                   )}
                 </div>
 
