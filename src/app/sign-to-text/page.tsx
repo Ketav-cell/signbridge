@@ -1,21 +1,5 @@
 'use client';
 
-/**
- * /sign-to-text
- *
- * Real-time sign language → text page (fully browser-native, no Python server).
- *
- * Data flow:
- *  1. useWebcam        → getUserMedia → attaches stream to <video>
- *  2. useHandDetection → every 150ms sends <video> frame to @mediapipe/hands (WASM)
- *                        → 21 landmarks → classifyASLLetter() → letter + confidence
- *  3. "stable letter" logic: same letter held for STABLE_THRESHOLD frames (~900ms)
- *     → letter appended to currentWord (with cooldown to prevent spamming)
- *  4. Space button → moves currentWord into words[]
- *     Backspace    → removes last char from currentWord
- *     Clear        → resets everything
- */
-
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Hand, Info } from 'lucide-react';
@@ -25,18 +9,12 @@ import RecognitionDisplay from '@/components/SignToText/RecognitionDisplay';
 import { useWebcam } from '@/hooks/useWebcam';
 import { useHandDetection } from '@/hooks/useHandDetection';
 
-// ── Letter-stability settings ────────────────────────────────────────────────
-/** How many consecutive matching detections before we commit a letter. */
-const STABLE_THRESHOLD = 3; // ~450 ms at 150 ms/frame
-/** Cooldown frames after committing a letter before the next one can be added. */
-const COOLDOWN_FRAMES = 5; // ~750 ms
+const STABLE_THRESHOLD = 3;
+const COOLDOWN_FRAMES = 5;
 
 export default function SignToTextPage() {
-  // Webcam
-  const { videoRef, isReady, error: cameraError, startCamera, stopCamera } =
-    useWebcam();
+  const { videoRef, isReady, error: cameraError, startCamera, stopCamera } = useWebcam();
 
-  // Browser-native hand detection (no Python server required)
   const {
     letter,
     confidence,
@@ -49,15 +27,12 @@ export default function SignToTextPage() {
     landmarks,
   } = useHandDetection();
 
-  // Word builder state
   const [currentWord, setCurrentWord] = useState('');
   const [words, setWords] = useState<string[]>([]);
 
-  // Stability tracking (not in React state — updated every frame)
   const stableRef = useRef({ letter: '', count: 0, cooldown: 0 });
   const [stableProgress, setStableProgress] = useState(0);
 
-  // ── Letter stability logic ──────────────────────────────────────────────
   useEffect(() => {
     if (!handDetected || !letter) {
       stableRef.current = { letter: '', count: 0, cooldown: 0 };
@@ -67,7 +42,6 @@ export default function SignToTextPage() {
 
     const s = stableRef.current;
 
-    // Decrement cooldown if active
     if (s.cooldown > 0) {
       s.cooldown -= 1;
       setStableProgress(0);
@@ -92,7 +66,6 @@ export default function SignToTextPage() {
     }
   }, [letter, handDetected]);
 
-  // ── Controls ────────────────────────────────────────────────────────────
   const handleStart = useCallback(async () => {
     await startCamera();
     if (videoRef.current) {
@@ -100,8 +73,6 @@ export default function SignToTextPage() {
     }
   }, [startCamera, startDetection, videoRef]);
 
-  // Start detection once video is ready (handles async gap between
-  // startCamera resolving and the video element being populated)
   useEffect(() => {
     if (isReady && !isRunning && videoRef.current) {
       startDetection(videoRef.current);
@@ -120,7 +91,6 @@ export default function SignToTextPage() {
     setCurrentWord((w) => w.slice(0, -1));
   }, []);
 
-  // Immediately commit the currently-detected letter (no stability wait)
   const handleConfirmLetter = useCallback(() => {
     if (!letter) return;
     setCurrentWord((w) => w + letter);
@@ -141,10 +111,8 @@ export default function SignToTextPage() {
     setStableProgress(0);
   }, []);
 
-  // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input/textarea
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
       if (e.key === 'Backspace') { e.preventDefault(); handleBackspace(); }
       if (e.key === ' ')         { e.preventDefault(); handleSpace(); }
@@ -154,13 +122,11 @@ export default function SignToTextPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [handleBackspace, handleSpace, handleConfirmLetter]);
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        {/* ── Page header ── */}
         <div className="mb-8">
           <Link
             href="/"
@@ -185,7 +151,6 @@ export default function SignToTextPage() {
           </div>
         </div>
 
-        {/* ── Info banner ── */}
         <div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-300">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
@@ -194,9 +159,7 @@ export default function SignToTextPage() {
           </p>
         </div>
 
-        {/* ── Main two-column layout ── */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Left: webcam */}
           <WebcamCapture
             videoRef={videoRef}
             isReady={isReady}
@@ -210,7 +173,6 @@ export default function SignToTextPage() {
             onStop={handleStop}
           />
 
-          {/* Right: recognition output */}
           <RecognitionDisplay
             currentLetter={letter}
             confidence={confidence}
@@ -225,7 +187,6 @@ export default function SignToTextPage() {
           />
         </div>
 
-        {/* ── How to use ── */}
         <section className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/40">
           <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
             How to use

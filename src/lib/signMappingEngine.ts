@@ -5,7 +5,6 @@ const ISL_BASE =
 const ISL_GIFS_URL = `${ISL_BASE}/ISL_Gifs`;
 const ISL_LETTERS_URL = `${ISL_BASE}/letters`;
 
-// All phrases available as GIFs in the ISL repository (ISL_Gifs/)
 const ISL_PHRASES = new Set([
   "address", "ahemdabad", "all", "any questions", "are you angry",
   "are you busy", "are you hungry", "assam", "august", "banana",
@@ -62,13 +61,6 @@ function makeLetterItem(char: string): SignSequenceItem {
   };
 }
 
-/**
- * ISL text-to-sign pipeline:
- * 1. Check if the whole phrase matches an ISL GIF
- * 2. Greedy multi-word phrase matching (longest match first)
- * 3. Single-word matching against ISL phrases
- * 4. Letter-by-letter fingerspelling fallback using letters/ images
- */
 export function processText(
   englishText: string,
   _signLanguage?: string
@@ -81,7 +73,6 @@ export function processText(
     .replace(/\s+/g, " ")
     .trim();
 
-  // Try full phrase match first
   if (ISL_PHRASES.has(normalized)) {
     return [makeGifItem(normalized)];
   }
@@ -93,7 +84,6 @@ export function processText(
   while (i < words.length) {
     let matched = false;
 
-    // Greedy: try longest multi-word phrase first (up to 7 words)
     for (let len = Math.min(words.length - i, 7); len >= 1; len--) {
       const phrase = words.slice(i, i + len).join(" ");
       if (ISL_PHRASES.has(phrase)) {
@@ -105,7 +95,6 @@ export function processText(
     }
 
     if (!matched) {
-      // Fingerspell letter by letter
       for (const char of words[i]) {
         if (/[a-z]/.test(char)) {
           sequence.push(makeLetterItem(char));
@@ -118,7 +107,6 @@ export function processText(
   return sequence;
 }
 
-// Kept for backward compatibility
 export function fingerspell(word: string): SignSequenceItem {
   const letters = word.toLowerCase().split("").filter((c) => /[a-z]/.test(c));
   return {

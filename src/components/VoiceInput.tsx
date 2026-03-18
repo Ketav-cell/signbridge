@@ -45,25 +45,21 @@ export default function VoiceInput() {
     stop: stopAudio,
   } = useAudioAnalyser();
 
-  // Sync interim transcript to store
   useEffect(() => {
     setInterimTranscript(interimTranscript);
   }, [interimTranscript, setInterimTranscript]);
 
-  // Sync errors to store
   useEffect(() => {
     if (speechError) {
       setStoreError(speechError);
     }
   }, [speechError, setStoreError]);
 
-  // Get the current speech code for the selected language
   const currentLanguage = languages.find(
     (l) => l.code === settings.inputLanguage
   );
   const speechCode = currentLanguage?.speechCode || 'en-US';
 
-  // Process final transcript
   const processTranscript = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
@@ -75,7 +71,6 @@ export default function VoiceInput() {
       try {
         let englishText = text;
 
-        // Translate if not English
         if (
           settings.inputLanguage !== 'en' &&
           settings.inputLanguage !== 'auto'
@@ -99,7 +94,6 @@ export default function VoiceInput() {
           setTranslatedText(englishText);
         }
 
-        // Look up signs for the English text
         const signRes = await fetch('/api/sign-lookup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -134,7 +128,6 @@ export default function VoiceInput() {
     ]
   );
 
-  // Watch for final transcript changes
   useEffect(() => {
     if (transcript) {
       processTranscript(transcript);
@@ -184,9 +177,7 @@ export default function VoiceInput() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {/* Microphone Button */}
       <div className="relative flex items-center justify-center">
-        {/* Pulsing ring when recording */}
         <AnimatePresence>
           {isListening && (
             <motion.div
@@ -234,7 +225,6 @@ export default function VoiceInput() {
         </motion.button>
       </div>
 
-      {/* Waveform Visualizer */}
       <AnimatePresence>
         {isListening && (
           <motion.div
@@ -252,7 +242,6 @@ export default function VoiceInput() {
         )}
       </AnimatePresence>
 
-      {/* Stop Button */}
       <AnimatePresence>
         {isListening && (
           <motion.div
@@ -274,7 +263,6 @@ export default function VoiceInput() {
         )}
       </AnimatePresence>
 
-      {/* Language Selector */}
       <div className="w-full max-w-xs">
         <label
           htmlFor="language-select"
@@ -302,7 +290,6 @@ export default function VoiceInput() {
         </select>
       </div>
 
-      {/* Live Captions / Interim Transcript */}
       <AnimatePresence>
         {(interimTranscript || transcript) && (
           <motion.div
@@ -325,7 +312,6 @@ export default function VoiceInput() {
         )}
       </AnimatePresence>
 
-      {/* Error Message */}
       <AnimatePresence>
         {speechError && (
           <motion.div

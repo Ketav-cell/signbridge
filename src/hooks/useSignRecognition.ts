@@ -15,25 +15,13 @@ interface UseSignRecognitionReturn {
   stopRecognition: () => void;
 }
 
-/**
- * Connects to the Python FastAPI WebSocket inference server.
- * Every FRAME_INTERVAL ms it captures a frame from the <video> element,
- * encodes it as base64 JPEG, sends it to the server, and receives:
- *   { hand_detected: bool, letter: string|null, confidence: float }
- *
- * The WebSocket URL defaults to ws://localhost:8000/ws but can be
- * overridden via NEXT_PUBLIC_INFERENCE_WS_URL in .env.local.
- */
-
 const WS_URL =
   (typeof process !== 'undefined' &&
     process.env.NEXT_PUBLIC_INFERENCE_WS_URL) ||
   'ws://localhost:8000/ws';
 
-/** How often we send a frame (ms). 150ms ≈ 6-7 FPS — fast enough for letters. */
 const FRAME_INTERVAL = 150;
 
-/** JPEG quality (0–1). Lower = smaller payload, faster round-trip. */
 const JPEG_QUALITY = 0.7;
 
 export function useSignRecognition(): UseSignRecognitionReturn {
@@ -49,10 +37,6 @@ export function useSignRecognition(): UseSignRecognitionReturn {
     confidence: 0,
     handDetected: false,
   });
-
-  // -----------------------------------------------------------------------
-  // WebSocket helpers
-  // -----------------------------------------------------------------------
 
   const openWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -74,7 +58,6 @@ export function useSignRecognition(): UseSignRecognitionReturn {
           handDetected: data.hand_detected ?? false,
         });
       } catch {
-        // Ignore malformed messages
       }
     };
 
@@ -89,15 +72,10 @@ export function useSignRecognition(): UseSignRecognitionReturn {
     };
   }, []);
 
-  // -----------------------------------------------------------------------
-  // Frame capture + send
-  // -----------------------------------------------------------------------
-
   const captureAndSend = useCallback((videoEl: HTMLVideoElement) => {
     if (wsRef.current?.readyState !== WebSocket.OPEN) return;
     if (!videoEl.videoWidth) return;
 
-    // Reuse a single offscreen canvas to avoid repeated allocation
     if (!offscreenCanvas.current) {
       offscreenCanvas.current = document.createElement('canvas');
     }
@@ -109,16 +87,11 @@ export function useSignRecognition(): UseSignRecognitionReturn {
     if (!ctx) return;
     ctx.drawImage(videoEl, 0, 0);
 
-    // Strip the "data:image/jpeg;base64," prefix — server only wants the raw b64
     const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
     const base64 = dataUrl.split(',')[1];
 
     wsRef.current.send(JSON.stringify({ frame: base64 }));
   }, []);
-
-  // -----------------------------------------------------------------------
-  // Public API
-  // -----------------------------------------------------------------------
 
   const startRecognition = useCallback(
     (videoEl: HTMLVideoElement) => {
@@ -144,7 +117,6 @@ export function useSignRecognition(): UseSignRecognitionReturn {
     setResult({ letter: null, confidence: 0, handDetected: false });
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);

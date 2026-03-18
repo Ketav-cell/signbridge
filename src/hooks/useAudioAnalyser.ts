@@ -78,7 +78,6 @@ export function useAudioAnalyser(): UseAudioAnalyserReturn {
     setFrequencyData(new Uint8Array(0));
   }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (rafIdRef.current !== null) {

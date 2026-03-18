@@ -32,7 +32,6 @@ export async function GET(
           description: entry.description,
         };
       }
-      // Non-alpha characters get a placeholder
       return {
         letter: char,
         mediaUrl: '',

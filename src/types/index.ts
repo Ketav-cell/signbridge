@@ -1,4 +1,3 @@
-// Sign Language types
 export type SignLanguageType = 'ASL' | 'BSL' | 'ISL' | 'Auslan';
 export type MediaType = 'gif' | 'mp4' | 'png-sequence' | 'sprite-sheet' | '3d-animation' | 'svg' | 'placeholder';
 export type SignType = 'sign' | 'fingerspell';

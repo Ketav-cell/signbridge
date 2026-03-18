@@ -3,18 +3,11 @@ import dictionaryData from "@/data/dictionary.json";
 
 const entries = dictionaryData as SignEntry[];
 
-/**
- * Get all signs, optionally filtered by sign language.
- */
 export function getAllSigns(signLanguage?: SignLanguageType): SignEntry[] {
   if (!signLanguage) return entries;
   return entries.filter((entry) => entry.signLanguage === signLanguage);
 }
 
-/**
- * Search signs by word, gloss token, category, or synonym.
- * Performs case-insensitive partial matching.
- */
 export function searchSigns(
   query: string,
   signLanguage?: SignLanguageType
@@ -38,9 +31,6 @@ export function searchSigns(
   });
 }
 
-/**
- * Get signs filtered by category, optionally also by sign language.
- */
 export function getSignsByCategory(
   category: string,
   signLanguage?: SignLanguageType
@@ -55,9 +45,6 @@ export function getSignsByCategory(
   );
 }
 
-/**
- * Get all unique categories from the dictionary.
- */
 export function getCategories(): string[] {
   const categorySet = new Set<string>();
   for (const entry of entries) {
@@ -68,9 +55,6 @@ export function getCategories(): string[] {
   return Array.from(categorySet).sort();
 }
 
-/**
- * Look up a single sign by its ID.
- */
 export function getSignById(id: string): SignEntry | null {
   return entries.find((entry) => entry.id === id) || null;
 }

@@ -1,9 +1,3 @@
-/**
- * Sign-Kit animation data ported to TypeScript.
- * Format: [boneName, 'rotation', axis, limitValue, direction]
- * Source: github.com/spectre900/Sign-Kit-An-Avatar-based-ISL-Toolkit
- */
-
 export type AnimFrame = [string, 'rotation', 'x' | 'y' | 'z', number, '+' | '-'];
 export type AnimSequence = AnimFrame[][];
 

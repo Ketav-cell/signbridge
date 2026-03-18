@@ -8,10 +8,6 @@ interface UseWebcamReturn {
   stopCamera: () => void;
 }
 
-/**
- * Manages webcam access via getUserMedia.
- * Returns a ref to attach to a <video> element, plus start/stop controls.
- */
 export function useWebcam(): UseWebcamReturn {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -52,7 +48,6 @@ export function useWebcam(): UseWebcamReturn {
     setIsReady(false);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());

@@ -46,7 +46,6 @@ export function useSignPlayer(
     const sign = signSequence[currentIndexRef.current];
     if (!sign) return;
 
-    // For fingerspelled items, cycle through letters first
     if (sign.signType === 'fingerspell' && sign.letters && sign.letters.length > 0) {
       const nextLetterIndex = letterIndexRef.current + 1;
       if (nextLetterIndex < sign.letters.length) {
@@ -59,7 +58,6 @@ export function useSignPlayer(
       }
     }
 
-    // Move to next sign
     const nextIndex = currentIndexRef.current + 1;
 
     if (nextIndex < signSequence.length) {
@@ -221,14 +219,12 @@ export function useSignPlayer(
 
   const progress = signSequence.length > 0 ? currentIndex / signSequence.length : 0;
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       clearTimer();
     };
   }, [clearTimer]);
 
-  // Reset when sequence changes
   useEffect(() => {
     reset();
   }, [signSequence, reset]);

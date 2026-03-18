@@ -6,15 +6,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-// Hand skeleton connections (matches the Python predictor's drawing order)
 const CONNECTIONS: [number, number][] = [
-  [0, 1], [1, 2], [2, 3], [3, 4],       // thumb
-  [5, 6], [6, 7], [7, 8],               // index
-  [9, 10], [10, 11], [11, 12],          // middle
-  [13, 14], [14, 15], [15, 16],         // ring
-  [17, 18], [18, 19], [19, 20],         // pinky
-  [5, 9], [9, 13], [13, 17],            // palm knuckles
-  [0, 5], [0, 17],                      // wrist to outer fingers
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [5, 6], [6, 7], [7, 8],
+  [9, 10], [10, 11], [11, 12],
+  [13, 14], [14, 15], [15, 16],
+  [17, 18], [18, 19], [19, 20],
+  [5, 9], [9, 13], [13, 17],
+  [0, 5], [0, 17],
 ];
 
 interface WebcamCaptureProps {
@@ -44,14 +43,12 @@ export default function WebcamCapture({
 }: WebcamCaptureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Draw skeleton on canvas whenever landmarks change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Size canvas to match its display size
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width || canvas.offsetWidth;
     canvas.height = rect.height || canvas.offsetHeight;
@@ -63,11 +60,9 @@ export default function WebcamCapture({
     const W = canvas.width;
     const H = canvas.height;
 
-    // Mirror x to match the CSS scale-x-[-1] on the video
     const x = (nx: number) => (1 - nx) * W;
     const y = (ny: number) => ny * H;
 
-    // Draw connections
     ctx.strokeStyle = '#00ff44';
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
@@ -78,7 +73,6 @@ export default function WebcamCapture({
       ctx.stroke();
     }
 
-    // Draw landmark dots
     for (let i = 0; i < 21; i++) {
       const cx = x(landmarks[i][0]);
       const cy = y(landmarks[i][1]);
@@ -91,7 +85,6 @@ export default function WebcamCapture({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Video container */}
       <div className="relative overflow-hidden rounded-2xl bg-gray-900 aspect-video">
         <video
           ref={videoRef}
@@ -103,13 +96,11 @@ export default function WebcamCapture({
           muted
         />
 
-        {/* Skeleton overlay canvas */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 h-full w-full pointer-events-none"
         />
 
-        {/* Placeholder when off */}
         {!isReady && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-500">
             <CameraOff className="h-12 w-12" />
@@ -117,7 +108,6 @@ export default function WebcamCapture({
           </div>
         )}
 
-        {/* Model loading overlay */}
         {isModelLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
             <Loader2 className="h-10 w-10 animate-spin text-primary-400" />
@@ -126,7 +116,6 @@ export default function WebcamCapture({
           </div>
         )}
 
-        {/* Hand detected badge */}
         <AnimatePresence>
           {isRunning && !isModelLoading && (
             <motion.div
@@ -155,7 +144,6 @@ export default function WebcamCapture({
           )}
         </AnimatePresence>
 
-        {/* REC badge */}
         {isRunning && !isModelLoading && (
           <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-bold text-white">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
@@ -164,7 +152,6 @@ export default function WebcamCapture({
         )}
       </div>
 
-      {/* Error messages */}
       {(cameraError || modelError) && (
         <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -172,7 +159,6 @@ export default function WebcamCapture({
         </div>
       )}
 
-      {/* Start / Stop button */}
       <Button
         variant={isRunning ? 'destructive' : 'default'}
         size="lg"

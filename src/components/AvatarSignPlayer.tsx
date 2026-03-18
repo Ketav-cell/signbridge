@@ -13,7 +13,6 @@ interface AvatarSignPlayerProps {
   className?: string;
 }
 
-// Per-bone animation state
 interface BoneState {
   bone: THREE.Bone;
   axis: 'x' | 'y' | 'z';
@@ -22,15 +21,13 @@ interface BoneState {
   done: boolean;
 }
 
-// Animation runner state
 interface AnimState {
-  // flat list of phases to process: each phase = AnimFrame[]
   phases: AnimFrame[][];
   phaseIdx: number;
   boneStates: BoneState[];
 }
 
-const ANIM_SPEED = 0.05; // radians per frame
+const ANIM_SPEED = 0.05;
 
 export default function AvatarSignPlayer({
   currentSign,
@@ -40,11 +37,9 @@ export default function AvatarSignPlayer({
 }: AvatarSignPlayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Keep speed in a ref so the RAF loop always reads the latest value
   const speedRef = useRef(speed);
   useEffect(() => { speedRef.current = speed; }, [speed]);
 
-  // Three.js objects
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -52,10 +47,8 @@ export default function AvatarSignPlayer({
   const rafRef = useRef<number | null>(null);
   const modelLoadedRef = useRef(false);
 
-  // Animation queue
   const animRef = useRef<AnimState | null>(null);
 
-  // Build phases list from currentSign
   function buildPhases(sign: SignSequenceItem): AnimFrame[][] {
     if (sign.signType === 'fingerspell' && sign.letters && sign.letters.length > 0) {
       const phases: AnimFrame[][] = [];
@@ -67,13 +60,10 @@ export default function AvatarSignPlayer({
       }
       return phases;
     }
-    // For whole-word signs, try direct lookup (e.g. HOME, PERSON, TIME, YOU)
-    // then fall back to fingerspelling
     const token = sign.glossToken.toUpperCase();
     const seq = LETTER_ANIMATIONS[token];
     if (seq) return [...seq];
 
-    // Fingerspell fallback
     const phases: AnimFrame[][] = [];
     for (const letter of token) {
       const lseq = LETTER_ANIMATIONS[letter];
@@ -84,7 +74,6 @@ export default function AvatarSignPlayer({
     return phases;
   }
 
-  // Start animating the current sign
   function startAnim(sign: SignSequenceItem) {
     const phases = buildPhases(sign);
     if (phases.length === 0) {
@@ -111,7 +100,6 @@ export default function AvatarSignPlayer({
     }
   }
 
-  // Main render + animation loop
   function loop() {
     rafRef.current = requestAnimationFrame(loop);
 
@@ -152,7 +140,6 @@ export default function AvatarSignPlayer({
     }
   }
 
-  // Setup Three.js scene once
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -174,7 +161,6 @@ export default function AvatarSignPlayer({
     camera.lookAt(0, 1.0, 0);
     cameraRef.current = camera;
 
-    // Lighting
     const ambient = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambient);
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -184,17 +170,14 @@ export default function AvatarSignPlayer({
     fillLight.position.set(-1, 1, -1);
     scene.add(fillLight);
 
-    // Load model
     const loader = new GLTFLoader();
     loader.load(
       '/models/xbot.glb',
       (gltf) => {
         const model = gltf.scene;
-        // Center model: crop to upper body view
         model.position.set(0, -0.9, 0);
         scene.add(model);
 
-        // Collect all bones
         model.traverse((obj) => {
           if ((obj as THREE.Bone).isBone) {
             bonesRef.current.set(obj.name, obj as THREE.Bone);
@@ -207,10 +190,8 @@ export default function AvatarSignPlayer({
       (err) => console.error('Failed to load xbot.glb:', err)
     );
 
-    // Start render loop
     rafRef.current = requestAnimationFrame(loop);
 
-    // Handle resize
     const ro = new ResizeObserver(() => {
       const cw = canvas.clientWidth;
       const ch = canvas.clientHeight;
@@ -231,18 +212,15 @@ export default function AvatarSignPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Trigger animation when sign or play state changes
   useEffect(() => {
     if (!currentSign) {
       animRef.current = null;
       return;
     }
     if (isPlaying || currentSign) {
-      // Animate whenever sign changes (whether playing or not, show the gesture)
       if (modelLoadedRef.current) {
         startAnim(currentSign);
       } else {
-        // Model not yet loaded — retry once it is
         const interval = setInterval(() => {
           if (modelLoadedRef.current) {
             clearInterval(interval);
