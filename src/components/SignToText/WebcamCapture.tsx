@@ -121,8 +121,8 @@ export default function WebcamCapture({
         {isModelLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
             <Loader2 className="h-10 w-10 animate-spin text-primary-400" />
-            <p className="text-sm font-medium">Connecting to inference server…</p>
-            <p className="text-xs text-gray-400">Make sure the Python server is running on port 8000</p>
+            <p className="text-sm font-medium">Loading hand detection model…</p>
+            <p className="text-xs text-gray-400">Downloading MediaPipe model (~7 MB, first load only)</p>
           </div>
         )}
 

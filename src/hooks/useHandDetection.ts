@@ -52,11 +52,20 @@ async function getHandLandmarker(): Promise<any> {
   landmarkerPromise = (async () => {
     const { HandLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-    return HandLandmarker.createFromOptions(vision, {
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
-      runningMode: 'VIDEO',
-      numHands: 1,
-    });
+    // Try GPU first, fall back to CPU
+    try {
+      return await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+        runningMode: 'VIDEO',
+        numHands: 1,
+      });
+    } catch {
+      return await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
+        runningMode: 'VIDEO',
+        numHands: 1,
+      });
+    }
   })();
   return landmarkerPromise;
 }
@@ -80,7 +89,8 @@ export function useHandDetection(): UseHandDetectionReturn {
     videoRef.current = videoEl;
     setState((s) => ({ ...s, isModelLoading: true, error: null }));
 
-    let landmarker: ReturnType<typeof getHandLandmarker> extends Promise<infer T> ? T : never;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let landmarker: any;
     try {
       landmarker = await getHandLandmarker();
     } catch (err) {
@@ -115,7 +125,9 @@ export function useHandDetection(): UseHandDetectionReturn {
         return;
       }
 
-      const lm = results.landmarks[0]; // array of {x,y,z}
+      // Mirror x to match the CSS scale-x-[-1] on the video element
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lm = results.landmarks[0].map((p: any) => ({ ...p, x: 1 - p.x }));
       const { letter, confidence } = classifyASLLetter(lm);
 
       // Collect landmarks for overlay
