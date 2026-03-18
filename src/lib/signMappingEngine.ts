@@ -1,117 +1,133 @@
-import type { SignEntry, SignLanguageType, SignSequenceItem } from "@/types";
-import { convertToASLGloss, normalizeText } from "@/lib/aslGrammar";
-import dictionaryData from "@/data/dictionary.json";
-import alphabetData from "@/data/aslAlphabet.json";
+import type { SignSequenceItem } from "@/types";
 
-// Build lookup maps from dictionary data
-const signsByWord = new Map<string, SignEntry>();
-const signsBySynonym = new Map<string, SignEntry>();
+const ISL_BASE =
+  "https://raw.githubusercontent.com/satyam9090/Automatic-Indian-Sign-Language-Translator-ISL/master";
+const ISL_GIFS_URL = `${ISL_BASE}/ISL_Gifs`;
+const ISL_LETTERS_URL = `${ISL_BASE}/letters`;
 
-function initializeMaps() {
-  if (signsByWord.size > 0) return; // Already initialized
+// All phrases available as GIFs in the ISL repository (ISL_Gifs/)
+const ISL_PHRASES = new Set([
+  "address", "ahemdabad", "all", "any questions", "are you angry",
+  "are you busy", "are you hungry", "assam", "august", "banana",
+  "banaras", "banglore", "be careful", "bridge", "cat",
+  "christmas", "church", "cilinic", "dasara", "december",
+  "did you finish homework", "do you have money",
+  "do you want something to drink", "do you watch tv", "dont worry",
+  "flower is beautiful", "good afternoon", "good morning", "good question",
+  "grapes", "hello", "hindu", "hyderabad", "i am a clerk", "i am fine",
+  "i am sorry", "i am thinking", "i am tired", "i go to a theatre",
+  "i had to say something but i forgot", "i like pink colour",
+  "i love to shop", "job", "july", "june", "karnataka", "kerala",
+  "krishna", "lets go for lunch", "mango", "may", "mile", "mumbai",
+  "nagpur", "nice to meet you", "open the door", "pakistan",
+  "please call me later", "please wait for sometime", "police station",
+  "post office", "pune", "punjab", "saturday", "shall i help you",
+  "shall we go together tommorow", "shop", "sign language interpreter",
+  "sit down", "stand up", "take care", "temple", "there was traffic jam",
+  "thursday", "toilet", "tomato", "tuesday", "usa", "village", "wednesday",
+  "what are you doing", "what is the problem", "what is today's date",
+  "what is your father do", "what is your mobile number",
+  "what is your name", "whats up", "where is the bathroom",
+  "where is the police station", "you are wrong",
+]);
 
-  const entries = dictionaryData as SignEntry[];
-  for (const entry of entries) {
-    const key = entry.englishWord.toLowerCase();
-    signsByWord.set(key, entry);
-
-    if (entry.synonyms) {
-      for (const synonym of entry.synonyms) {
-        const synKey = synonym.toLowerCase();
-        if (!signsByWord.has(synKey)) {
-          signsBySynonym.set(synKey, entry);
-        }
-      }
-    }
-  }
+function gifUrl(phrase: string): string {
+  return `${ISL_GIFS_URL}/${phrase.replace(/ /g, "%20")}.gif`;
 }
 
-/**
- * Look up a sign in the dictionary by word.
- * Checks the primary word map first, then synonyms.
- */
-export function lookupSign(
-  word: string,
-  signLanguage: SignLanguageType
-): SignEntry | null {
-  initializeMaps();
-
-  const key = word.toLowerCase();
-
-  // Check primary word map
-  const primary = signsByWord.get(key);
-  if (primary && primary.signLanguage === signLanguage) {
-    return primary;
-  }
-
-  // Check synonym map
-  const synonym = signsBySynonym.get(key);
-  if (synonym && synonym.signLanguage === signLanguage) {
-    return synonym;
-  }
-
-  // If no language-specific match, return any match (for fallback)
-  return primary || synonym || null;
+function letterUrl(char: string): string {
+  return `${ISL_LETTERS_URL}/${char.toLowerCase()}.jpg`;
 }
 
-/**
- * Create a fingerspelling sequence item for a word not found in the dictionary.
- */
-export function fingerspell(word: string): SignSequenceItem {
-  const letters = word.toUpperCase().split("");
-  const LETTER_DURATION = 500; // ms per letter
-  const totalDuration = letters.length * LETTER_DURATION;
-
+function makeGifItem(phrase: string): SignSequenceItem {
   return {
-    word: word,
-    glossToken: word.toUpperCase(),
+    word: phrase,
+    glossToken: phrase.toUpperCase(),
+    signType: "sign",
+    mediaUrl: gifUrl(phrase),
+    duration: 3000,
+    description: phrase,
+  };
+}
+
+function makeLetterItem(char: string): SignSequenceItem {
+  return {
+    word: char,
+    glossToken: char.toUpperCase(),
     signType: "fingerspell",
-    mediaUrl: "",
-    duration: totalDuration,
-    description: `Fingerspell: ${letters.join("-")}`,
-    letters: letters,
+    mediaUrl: letterUrl(char),
+    duration: 800,
+    description: `Letter: ${char.toUpperCase()}`,
+    letters: [char.toLowerCase()],
   };
 }
 
 /**
- * Full text-to-sign processing pipeline.
- *
- * 1. Normalize text (lowercase, expand contractions, numbers to words, strip punctuation)
- * 2. Convert to ASL gloss token order
- * 3. For each gloss token, look up in dictionary or fingerspell
- * 4. Return ordered array of sign sequence items
+ * ISL text-to-sign pipeline:
+ * 1. Check if the whole phrase matches an ISL GIF
+ * 2. Greedy multi-word phrase matching (longest match first)
+ * 3. Single-word matching against ISL phrases
+ * 4. Letter-by-letter fingerspelling fallback using letters/ images
  */
 export function processText(
   englishText: string,
-  signLanguage: SignLanguageType = "ASL"
+  _signLanguage?: string
 ): SignSequenceItem[] {
-  initializeMaps();
+  if (!englishText?.trim()) return [];
 
-  if (!englishText || englishText.trim().length === 0) {
-    return [];
+  const normalized = englishText
+    .toLowerCase()
+    .replace(/[^a-z0-9\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Try full phrase match first
+  if (ISL_PHRASES.has(normalized)) {
+    return [makeGifItem(normalized)];
   }
 
-  // Convert to ASL gloss tokens (normalizeText is called internally)
-  const glossTokens = convertToASLGloss(englishText);
-
+  const words = normalized.split(" ").filter(Boolean);
   const sequence: SignSequenceItem[] = [];
+  let i = 0;
 
-  for (const token of glossTokens) {
-    const entry = lookupSign(token, signLanguage);
+  while (i < words.length) {
+    let matched = false;
 
-    if (entry) {
-      sequence.push({
-        word: entry.englishWord,
-        glossToken: token,
-        signType: "sign",
-        mediaUrl: entry.mediaUrl,
-        duration: entry.duration,
-        description: entry.description,
-      });
-    } else {
-      sequence.push(fingerspell(token.toLowerCase()));
+    // Greedy: try longest multi-word phrase first (up to 7 words)
+    for (let len = Math.min(words.length - i, 7); len >= 1; len--) {
+      const phrase = words.slice(i, i + len).join(" ");
+      if (ISL_PHRASES.has(phrase)) {
+        sequence.push(makeGifItem(phrase));
+        i += len;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      // Fingerspell letter by letter
+      for (const char of words[i]) {
+        if (/[a-z]/.test(char)) {
+          sequence.push(makeLetterItem(char));
+        }
+      }
+      i++;
     }
   }
 
   return sequence;
+}
+
+// Kept for backward compatibility
+export function fingerspell(word: string): SignSequenceItem {
+  const letters = word.toLowerCase().split("").filter((c) => /[a-z]/.test(c));
+  return {
+    word,
+    glossToken: word.toUpperCase(),
+    signType: "fingerspell",
+    mediaUrl: letters[0] ? letterUrl(letters[0]) : "",
+    duration: letters.length * 800,
+    description: `Fingerspell: ${word}`,
+    letters,
+  };
 }

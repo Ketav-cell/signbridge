@@ -21,7 +21,7 @@ import Header from '@/components/Header';
 import VoiceInput from '@/components/VoiceInput';
 import { Button } from '@/components/ui/button';
 
-const AvatarSignPlayer = dynamic(() => import('@/components/AvatarSignPlayer'), {
+const ISLSignPlayer = dynamic(() => import('@/components/ISLSignPlayer'), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center">
@@ -147,9 +147,9 @@ export default function HomePage() {
             >
               {currentSign ? (
                 <>
-                  {/* Sign Visual - 3D avatar */}
-                  <div className="h-52 w-52 overflow-hidden rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 sm:h-64 sm:w-64">
-                    <AvatarSignPlayer
+                  {/* Sign Visual - ISL GIF / letter image */}
+                  <div className="h-64 w-64 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 sm:h-72 sm:w-72">
+                    <ISLSignPlayer
                       currentSign={currentSign}
                       isPlaying={isPlaying}
                       speed={playback.speed}
@@ -165,22 +165,6 @@ export default function HomePage() {
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       {currentSign.description}
                     </p>
-                    {currentSign.signType === 'fingerspell' &&
-                      currentSign.letters && (
-                        <div className="mt-3 flex items-center justify-center gap-1">
-                          {currentSign.letters.map((letter, i) => (
-                            <span
-                              key={i}
-                              className={cn(
-                                'flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors',
-                                'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
-                              )}
-                            >
-                              {letter}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                   </div>
                 </>
               ) : (
