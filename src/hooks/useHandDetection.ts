@@ -1,13 +1,3 @@
-/**
- * useHandDetection
- *
- * Tries the Python CNN inference server first (ws://localhost:8000/ws).
- * If it is not reachable (Vercel, mobile, server not running) it falls back
- * to fully browser-native MediaPipe + rule-based classifier automatically.
- *
- * The CNN server gives better accuracy; the browser fallback works everywhere.
- */
-
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { classifyASLLetter } from '@/lib/aslClassifier';
 
@@ -28,18 +18,16 @@ export interface UseHandDetectionReturn extends HandDetectionState {
 
 export type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
 
-// ── Config ────────────────────────────────────────────────────────────────────
 const WS_URL          = 'ws://localhost:8000/ws';
-const WS_TIMEOUT_MS   = 2000;   // how long to wait before giving up on server
-const DETECT_INTERVAL = 120;    // ms between frames
+const WS_TIMEOUT_MS   = 2000;
+const DETECT_INTERVAL = 120;
 const MIN_CONFIDENCE  = 0.25;
 const WINDOW_SIZE     = 7;
 const MIN_VOTES       = 4;
 
-const MODEL_URL  = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-const WASM_PATH  = '/tasks-vision-wasm';
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const WASM_PATH = '/tasks-vision-wasm';
 
-// Singleton so the browser model is only loaded once
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let browserLandmarkerPromise: Promise<any> | null = null;
 
@@ -79,7 +67,6 @@ export function useHandDetection(): UseHandDetectionReturn {
     isModelLoading: false, error: null, landmarks: null,
   });
 
-  // ── Majority-vote helper ──────────────────────────────────────────────────
   const pushVote = useCallback((letter: string, confidence: number) => {
     if (!letter || letter === '?' || confidence < MIN_CONFIDENCE) return null;
     windowRef.current.push({ letter, confidence });
@@ -100,7 +87,6 @@ export function useHandDetection(): UseHandDetectionReturn {
     return bestCount >= MIN_VOTES ? { letter: bestLetter, conf: bestConf } : null;
   }, []);
 
-  // ── WebSocket (Python CNN server) ─────────────────────────────────────────
   const startWebSocket = useCallback((videoEl: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const ws = new WebSocket(WS_URL);
@@ -114,8 +100,7 @@ export function useHandDetection(): UseHandDetectionReturn {
           waitingRef.current = false;
           try {
             const result = JSON.parse(event.data);
-            const lm: [number, number][] | null = result.landmarks?.length
-              ? result.landmarks : null;
+            const lm: [number, number][] | null = result.landmarks?.length ? result.landmarks : null;
 
             if (!result.hand_detected) {
               windowRef.current = [];
@@ -125,9 +110,8 @@ export function useHandDetection(): UseHandDetectionReturn {
 
             const rawLetter = result.letter ?? null;
             const rawConf   = result.confidence ?? 0;
-
-            // Always show current detection even if not stable
             const stable = rawLetter ? pushVote(rawLetter, rawConf) : null;
+
             setState((s) => ({
               ...s,
               handDetected: true,
@@ -135,7 +119,7 @@ export function useHandDetection(): UseHandDetectionReturn {
               confidence:   rawConf,
               landmarks:    lm,
             }));
-          } catch { /* ignore malformed */ }
+          } catch { /* ignore */ }
         };
 
         ws.onclose = () => { wsRef.current = null; };
@@ -164,7 +148,6 @@ export function useHandDetection(): UseHandDetectionReturn {
     });
   }, [pushVote]);
 
-  // ── Browser-native (MediaPipe + rule-based) ───────────────────────────────
   const startBrowserNative = useCallback(async (videoEl: HTMLVideoElement) => {
     setState((s) => ({ ...s, isModelLoading: true }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -197,12 +180,9 @@ export function useHandDetection(): UseHandDetectionReturn {
         return;
       }
 
-      // Raw landmarks for overlay (canvas mirrors them itself)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawLm = results.landmarks[0];
       const pts: [number, number][] = rawLm.map((p: { x: number; y: number }) => [p.x, p.y]);
-
-      // Mirror x for classifier (right-hand orientation)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mirroredLm = rawLm.map((p: any) => ({ ...p, x: 1 - p.x }));
       const { letter, confidence } = classifyASLLetter(mirroredLm);
@@ -218,13 +198,11 @@ export function useHandDetection(): UseHandDetectionReturn {
     }, DETECT_INTERVAL);
   }, [pushVote]);
 
-  // ── Public API ────────────────────────────────────────────────────────────
   const startDetection = useCallback(async (videoEl: HTMLVideoElement) => {
     videoRef.current = videoEl;
     windowRef.current = [];
     setState((s) => ({ ...s, isModelLoading: true, error: null }));
 
-    // Try Python server first; fall back to browser-native silently
     const serverConnected = await startWebSocket(videoEl);
     if (!serverConnected) {
       await startBrowserNative(videoEl);
@@ -238,8 +216,8 @@ export function useHandDetection(): UseHandDetectionReturn {
   const stopDetection = useCallback(() => {
     if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
-    videoRef.current  = null;
-    windowRef.current = [];
+    videoRef.current   = null;
+    windowRef.current  = [];
     waitingRef.current = false;
     setIsRunning(false);
     setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0, landmarks: null }));

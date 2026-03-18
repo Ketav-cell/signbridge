@@ -1,15 +1,3 @@
-"""
-Predictor — hand skeleton CNN approach (fixed).
-
-Fixes vs previous version:
-  1. Skeleton is SCALED to fill the 400x400 canvas — matches training data
-     regardless of hand size / camera distance.
-  2. CNN input is normalised to [0, 1] (/ 255) — standard Keras preprocessing.
-  3. ALWAYS returns a letter — Space/Backspace/Next/J/Z/command gestures fall
-     back to the best alpha letter so the output is never null.
-  4. Deterministic output — no confidence threshold blocks prediction.
-"""
-
 import base64
 import math
 import os
@@ -31,7 +19,7 @@ _HAND_MODEL_URL = (
 
 OFFSET = 29
 CANVAS_SIZE = 400
-PADDING = 40          # px kept clear on each side when scaling skeleton
+PADDING = 40
 
 
 def _ensure_hand_model():
@@ -47,14 +35,6 @@ def _dist(a, b):
 
 
 def _draw_skeleton(pts: List, canvas_size: int = CANVAS_SIZE) -> np.ndarray:
-    """
-    Draw hand skeleton on a white canvas.
-
-    pts are in bbox-relative pixel coords.  We SCALE them so the hand fills
-    the canvas (minus PADDING on each side) — this matches how training images
-    were generated and ensures the CNN sees consistent-sized skeletons regardless
-    of how close the hand is to the camera.
-    """
     white = np.ones((canvas_size, canvas_size, 3), np.uint8) * 255
 
     xs = [pt[0] for pt in pts]
@@ -67,7 +47,6 @@ def _draw_skeleton(pts: List, canvas_size: int = CANVAS_SIZE) -> np.ndarray:
     avail = canvas_size - 2 * PADDING
     scale = avail / max(hand_w, hand_h)
 
-    # Centre the scaled hand in the canvas
     os_x = PADDING + (avail - hand_w * scale) / 2 - min_x * scale
     os_y = PADDING + (avail - hand_h * scale) / 2 - min_y * scale
 
@@ -77,7 +56,6 @@ def _draw_skeleton(pts: List, canvas_size: int = CANVAS_SIZE) -> np.ndarray:
             int(round(pts[i][1] * scale + os_y)),
         )
 
-    # Finger connections (same as original zip)
     for t in range(4):
         cv2.line(white, p(t), p(t + 1), (0, 255, 0), 3)
     for t in range(5, 8):
@@ -100,15 +78,7 @@ def _draw_skeleton(pts: List, canvas_size: int = CANVAS_SIZE) -> np.ndarray:
 
 
 def _map_group_to_letter(ch1, ch2, pts, scale):
-    """
-    Full disambiguation from prediction_wo_gui.py with scale-normalised
-    thresholds.  Returns a single uppercase letter A–Z.  Never returns
-    Space / Backspace / Next — those are silently ignored and the best
-    alpha letter found before the command overrides is used instead.
-    """
     T = max(scale, 1.0) / 100.0
-
-    # ── inter-group disambiguation (group index → group index) ──────────────
 
     pl = [ch1, ch2]
     l = [[5,2],[5,3],[3,5],[3,6],[3,0],[3,2],[6,4],[6,1],[6,2],[6,6],[6,7],[6,0],[6,5],
@@ -329,8 +299,6 @@ def _map_group_to_letter(ch1, ch2, pts, scale):
         if (pts[6][1]>pts[8][1] and pts[10][1]>pts[12][1] and pts[14][1]>pts[16][1]):
             ch1 = 1
 
-    # ── intra-group → letter ─────────────────────────────────────────────────
-
     if ch1 == 0:
         ch1 = 'S'
         if (pts[4][0]<pts[6][0] and pts[4][0]<pts[10][0] and
@@ -354,7 +322,6 @@ def _map_group_to_letter(ch1, ch2, pts, scale):
     elif ch1 == 3:
         ch1 = 'G' if _dist(pts[8], pts[12]) > 72*T else 'H'
     elif ch1 == 7:
-        # J is a motion sign — return I (closest static approximation)
         ch1 = 'Y' if _dist(pts[8], pts[4]) > 42*T else 'I'
     elif ch1 == 4:
         ch1 = 'L'
@@ -362,12 +329,11 @@ def _map_group_to_letter(ch1, ch2, pts, scale):
         ch1 = 'X'
     elif ch1 == 5:
         if (pts[4][0]>pts[12][0] and pts[4][0]>pts[16][0] and pts[4][0]>pts[20][0]):
-            # Z is a motion sign — return the static closest (index up = D-like)
             ch1 = 'Z' if pts[8][1]<pts[5][1] else 'Q'
         else:
             ch1 = 'P'
     elif ch1 == 1:
-        ch1 = 'B'   # default for group 1
+        ch1 = 'B'
         if (pts[6][1]>pts[8][1] and pts[10][1]>pts[12][1] and
                 pts[14][1]>pts[16][1] and pts[18][1]>pts[20][1]):
             ch1 = 'B'
@@ -398,15 +364,8 @@ def _map_group_to_letter(ch1, ch2, pts, scale):
                 pts[14][1]<pts[16][1] and pts[18][1]<pts[20][1]):
             ch1 = 'R'
 
-    # ── save the best alpha letter BEFORE command overrides ──────────────────
     best_alpha = ch1 if (isinstance(ch1, str) and ch1.isalpha() and len(ch1) == 1) else 'A'
 
-    # ── command gesture overrides (Space / Backspace / Next) ─────────────────
-    # These are intentionally NOT returned — we always want a letter output.
-    # (The original app used these for UI control, but here we just ignore them
-    #  and return the best alpha letter found above.)
-
-    # ── final safety net ─────────────────────────────────────────────────────
     if isinstance(ch1, str) and ch1.isalpha() and len(ch1) == 1:
         return ch1.upper()
     return best_alpha.upper() if isinstance(best_alpha, str) else 'A'
@@ -440,7 +399,7 @@ class Predictor:
             min_tracking_confidence=0.4,
         )
         self._detector = HandLandmarker.create_from_options(options)
-        print("✅ Predictor ready (cnn8grps CNN + mediapipe Tasks API).")
+        print("Predictor ready.")
 
     def predict(self, frame_b64: str) -> dict:
         try:
@@ -451,8 +410,6 @@ class Predictor:
                 return {"hand_detected": False, "letter": None, "confidence": 0.0, "landmarks": []}
 
             h, w = frame_raw.shape[:2]
-
-            # Flip to match training pipeline
             frame = cv2.flip(frame_raw, 1)
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -464,25 +421,18 @@ class Predictor:
 
             landmarks = result.hand_landmarks[0]
 
-            # Full-frame pixel coords in flipped space
             px = [int(lm.x * w) for lm in landmarks]
             py = [int(lm.y * h) for lm in landmarks]
 
-            # Bounding box + per-landmark offset coords
             x1 = max(0, min(px) - OFFSET)
             y1 = max(0, min(py) - OFFSET)
             x2 = min(w, max(px) + OFFSET)
             y2 = min(h, max(py) + OFFSET)
             pts = [[px[i] - x1, py[i] - y1, 0] for i in range(21)]
 
-            # Scale factor for disambiguation thresholds
             hand_scale = max(_dist(pts[0], pts[9]), 1.0)
 
-            # Draw skeleton scaled to fill canvas — matches training data
             skeleton = _draw_skeleton(pts, CANVAS_SIZE)
-
-            # ── CNN inference ────────────────────────────────────────────────
-            # Normalise to [0, 1] — standard Keras preprocessing
             inp = (skeleton.reshape(1, CANVAS_SIZE, CANVAS_SIZE, 3)
                    .astype(np.float32) / 255.0)
             probs = self._cnn.predict(inp, verbose=0)[0].astype("float32")
@@ -492,13 +442,10 @@ class Predictor:
             ch2 = int(np.argmax(tmp))
 
             letter = _map_group_to_letter(ch1, ch2, pts, hand_scale)
+            print(f"[dbg] scale={hand_scale:.0f} cnn={ch1}({confidence:.2f}) -> {letter}")
 
-            print(f"[dbg] scale={hand_scale:.0f} cnn={ch1}({confidence:.2f}) → {letter}")
-
-            # Un-flip landmarks for frontend overlay
             lm_norm = [[round(1.0 - lm.x, 4), round(lm.y, 4)] for lm in landmarks]
 
-            # ALWAYS return a letter — never null
             return {
                 "hand_detected": True,
                 "letter": letter,
