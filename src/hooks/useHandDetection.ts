@@ -125,13 +125,15 @@ export function useHandDetection(): UseHandDetectionReturn {
         return;
       }
 
-      // Mirror x to match the CSS scale-x-[-1] on the video element
+      // Raw landmarks — used for overlay (WebcamCapture canvas mirrors them itself)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lm = results.landmarks[0].map((p: any) => ({ ...p, x: 1 - p.x }));
-      const { letter, confidence } = classifyASLLetter(lm);
+      const rawLm = results.landmarks[0];
+      const pts: [number, number][] = rawLm.map((p: { x: number; y: number }) => [p.x, p.y]);
 
-      // Collect landmarks for overlay
-      const pts: [number, number][] = lm.map((p: { x: number; y: number }) => [p.x, p.y]);
+      // Mirror x before classifying so classifier sees right-hand orientation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lm = rawLm.map((p: any) => ({ ...p, x: 1 - p.x }));
+      const { letter, confidence } = classifyASLLetter(lm);
 
       if (letter && letter !== '?' && confidence >= MIN_CONFIDENCE) {
         windowRef.current.push({ letter, confidence });
