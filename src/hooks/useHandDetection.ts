@@ -1,20 +1,23 @@
 /**
  * useHandDetection
  *
- * Browser-native hand detection using @mediapipe/tasks-vision.
- * WASM files are served from /public/tasks-vision-wasm/ — no CDN required.
+ * Sends webcam frames to the Python inference server (ws://localhost:8000/ws)
+ * which runs the CNN skeleton-based hand-sign classifier from:
+ * Sign-Language-To-Text-and-Speech-Conversion
  *
  * Data flow:
  *  <video> element (webcam)
- *    → every DETECT_INTERVAL ms, HandLandmarker.detectForVideo() runs inference
- *    → 21 normalised landmarks returned
- *    → classifyASLLetter() maps landmarks to a letter (A-Z)
- *    → majority vote over a sliding window → stable letter emitted
+ *    → every DETECT_INTERVAL ms, draw frame onto offscreen <canvas>
+ *    → toDataURL('image/jpeg') → base64
+ *    → send to WebSocket server
+ *    → receive { hand_detected, letter, confidence }
+ *    → majority-vote sliding window → stable letter emitted
  *    → state update → UI re-render
+ *
+ * Falls back gracefully if the server is not reachable.
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
 
 export interface HandDetectionState {
   letter: string | null;
@@ -30,144 +33,152 @@ export interface UseHandDetectionReturn extends HandDetectionState {
   stopDetection: () => void;
 }
 
-const DETECT_INTERVAL = 100;  // ms between frames (was 150)
-const MIN_CONFIDENCE  = 0.45; // minimum confidence to emit a letter
-const WINDOW_SIZE     = 7;    // sliding window for majority vote
-const MIN_VOTES       = 4;    // minimum votes in window to emit (majority)
+// Keep these types for backward compatibility with aslClassifier imports
+export type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
 
-/** WASM files are copied from node_modules to public/ so no CDN is needed. */
-const WASM_PATH = '/tasks-vision-wasm';
+const DETECT_INTERVAL = 120;   // ms between frames sent to server
+const MIN_CONFIDENCE  = 0.30;  // minimum confidence to count a vote
+const WINDOW_SIZE     = 7;     // sliding window size
+const MIN_VOTES       = 4;     // minimum agreeing votes to emit a letter
 
-const MODEL_URL =
-  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const WS_URL = 'ws://localhost:8000/ws';
 
 export function useHandDetection(): UseHandDetectionReturn {
-  const detectorRef  = useRef<any>(null);
   const videoRef     = useRef<HTMLVideoElement | null>(null);
+  const canvasRef    = useRef<HTMLCanvasElement | null>(null);
+  const wsRef        = useRef<WebSocket | null>(null);
   const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const classifyRef  = useRef<((lm: Landmark[]) => ClassifyResult) | null>(null);
+  const waitingRef   = useRef(false); // prevent overlapping requests
 
   // Sliding window buffer for majority-vote smoothing
   const windowRef = useRef<{ letter: string; confidence: number }[]>([]);
 
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning]   = useState(false);
   const [state, setState] = useState<HandDetectionState>({
-    letter:          null,
-    confidence:      0,
-    handDetected:    false,
-    isModelLoading:  false,
-    error:           null,
+    letter:         null,
+    confidence:     0,
+    handDetected:   false,
+    isModelLoading: false,
+    error:          null,
   });
 
-  const initModel = useCallback(async () => {
-    if (detectorRef.current) return;
-    setState((s) => ({ ...s, isModelLoading: true, error: null }));
-
-    try {
-      const [{ HandLandmarker, FilesetResolver }, classifierModule] = await Promise.all([
-        import('@mediapipe/tasks-vision'),
-        import('@/lib/aslClassifier'),
-      ]);
-
-      classifyRef.current = classifierModule.classifyASLLetter;
-
-      const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-
-      const landmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: MODEL_URL,
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        numHands: 1,
-      });
-
-      detectorRef.current = landmarker;
-      setState((s) => ({ ...s, isModelLoading: false }));
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        isModelLoading: false,
-        error: err instanceof Error ? err.message : 'Failed to load hand detection.',
-      }));
-    }
+  // Connect WebSocket
+  const connectWS = useCallback((): Promise<WebSocket> => {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(WS_URL);
+      ws.onopen = () => resolve(ws);
+      ws.onerror = () => reject(new Error('Cannot connect to inference server at ' + WS_URL));
+      ws.onclose = () => {
+        wsRef.current = null;
+      };
+    });
   }, []);
 
   const startDetection = useCallback(
     async (videoEl: HTMLVideoElement) => {
       videoRef.current = videoEl;
-      await initModel();
-      if (!detectorRef.current) return;
+      setState((s) => ({ ...s, isModelLoading: true, error: null }));
 
-      windowRef.current = [];
-      setIsRunning(true);
+      // Create offscreen canvas for frame capture
+      if (!canvasRef.current) {
+        canvasRef.current = document.createElement('canvas');
+      }
 
-      intervalRef.current = setInterval(() => {
-        if (!detectorRef.current || !videoRef.current) return;
-        if (videoRef.current.readyState < 2) return;
+      try {
+        const ws = await connectWS();
+        wsRef.current = ws;
+        setState((s) => ({ ...s, isModelLoading: false }));
 
-        try {
-          const results = detectorRef.current.detectForVideo(
-            videoRef.current,
-            performance.now()
-          );
+        // Handle incoming messages
+        ws.onmessage = (event) => {
+          waitingRef.current = false;
+          try {
+            const result: { hand_detected: boolean; letter?: string | null; confidence?: number } =
+              JSON.parse(event.data);
 
-          if (!results.landmarks?.length) {
-            windowRef.current = [];
-            setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0 }));
-            return;
-          }
-
-          const lm: Landmark[] = results.landmarks[0].map((pt: any) => ({
-            x: pt.x,
-            y: pt.y,
-            z: pt.z ?? 0,
-          }));
-
-          const raw = classifyRef.current!(lm);
-
-          // Add to sliding window
-          windowRef.current.push(raw);
-          if (windowRef.current.length > WINDOW_SIZE) {
-            windowRef.current.shift();
-          }
-
-          // Majority vote over the window
-          const votes: Record<string, { count: number; totalConf: number }> = {};
-          for (const entry of windowRef.current) {
-            if (entry.confidence < MIN_CONFIDENCE) continue;
-            if (!votes[entry.letter]) votes[entry.letter] = { count: 0, totalConf: 0 };
-            votes[entry.letter].count++;
-            votes[entry.letter].totalConf += entry.confidence;
-          }
-
-          let bestLetter = null;
-          let bestConf   = 0;
-          let bestCount  = 0;
-          for (const [letter, { count, totalConf }] of Object.entries(votes)) {
-            if (count > bestCount || (count === bestCount && totalConf > bestConf)) {
-              bestLetter = letter;
-              bestConf   = totalConf / count;
-              bestCount  = count;
+            if (!result.hand_detected) {
+              windowRef.current = [];
+              setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0 }));
+              return;
             }
+
+            const letter     = result.letter ?? null;
+            const confidence = result.confidence ?? 0;
+
+            if (letter && confidence >= MIN_CONFIDENCE) {
+              windowRef.current.push({ letter, confidence });
+              if (windowRef.current.length > WINDOW_SIZE) windowRef.current.shift();
+            }
+
+            // Majority vote
+            const votes: Record<string, { count: number; totalConf: number }> = {};
+            for (const entry of windowRef.current) {
+              if (!votes[entry.letter]) votes[entry.letter] = { count: 0, totalConf: 0 };
+              votes[entry.letter].count++;
+              votes[entry.letter].totalConf += entry.confidence;
+            }
+
+            let bestLetter: string | null = null;
+            let bestConf   = 0;
+            let bestCount  = 0;
+            for (const [l, { count, totalConf }] of Object.entries(votes)) {
+              if (count > bestCount || (count === bestCount && totalConf > bestConf)) {
+                bestLetter = l;
+                bestConf   = totalConf / count;
+                bestCount  = count;
+              }
+            }
+
+            const stableLetter = bestCount >= MIN_VOTES ? bestLetter : null;
+
+            setState((s) => ({
+              ...s,
+              handDetected: true,
+              letter:       stableLetter,
+              confidence:   stableLetter ? bestConf : 0,
+            }));
+          } catch {
+            // ignore malformed messages
           }
+        };
 
-          // Only emit if we have enough agreeing votes
-          const stableLetter = bestCount >= MIN_VOTES ? bestLetter : null;
-          const stableConf   = stableLetter ? bestConf : 0;
+        windowRef.current = [];
+        setIsRunning(true);
 
-          setState((s) => ({
-            ...s,
-            handDetected: true,
-            letter:       stableLetter,
-            confidence:   stableConf,
-          }));
-        } catch {
-          // Ignore single-frame errors
-        }
-      }, DETECT_INTERVAL);
+        // Frame capture loop
+        intervalRef.current = setInterval(() => {
+          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+          if (!videoRef.current || videoRef.current.readyState < 2) return;
+          if (waitingRef.current) return; // skip frame if server hasn't responded yet
+
+          const video  = videoRef.current;
+          const canvas = canvasRef.current!;
+          canvas.width  = video.videoWidth  || 320;
+          canvas.height = video.videoHeight || 240;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          ctx.drawImage(video, 0, 0);
+
+          // Strip the data-URL prefix
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const b64 = dataUrl.replace(/^data:image\/jpeg;base64,/, '');
+
+          waitingRef.current = true;
+          wsRef.current.send(JSON.stringify({ frame: b64 }));
+        }, DETECT_INTERVAL);
+
+      } catch (err) {
+        setState((s) => ({
+          ...s,
+          isModelLoading: false,
+          error: err instanceof Error
+            ? `${err.message} — start the inference server with: cd inference && uvicorn server:app --port 8000`
+            : 'Failed to connect to inference server.',
+        }));
+      }
     },
-    [initModel]
+    [connectWS]
   );
 
   const stopDetection = useCallback(() => {
@@ -175,8 +186,13 @@ export function useHandDetection(): UseHandDetectionReturn {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    videoRef.current    = null;
-    windowRef.current   = [];
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    videoRef.current  = null;
+    windowRef.current = [];
+    waitingRef.current = false;
     setIsRunning(false);
     setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0 }));
   }, []);
@@ -184,6 +200,7 @@ export function useHandDetection(): UseHandDetectionReturn {
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (wsRef.current) wsRef.current.close();
     };
   }, []);
 
