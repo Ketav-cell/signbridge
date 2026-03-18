@@ -1,10 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Camera, CameraOff, Loader2, AlertCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+
+// Hand skeleton connections (matches the Python predictor's drawing order)
+const CONNECTIONS: [number, number][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4],       // thumb
+  [5, 6], [6, 7], [7, 8],               // index
+  [9, 10], [10, 11], [11, 12],          // middle
+  [13, 14], [14, 15], [15, 16],         // ring
+  [17, 18], [18, 19], [19, 20],         // pinky
+  [5, 9], [9, 13], [13, 17],            // palm knuckles
+  [0, 5], [0, 17],                      // wrist to outer fingers
+];
 
 interface WebcamCaptureProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -14,6 +25,7 @@ interface WebcamCaptureProps {
   handDetected: boolean;
   cameraError: string | null;
   modelError: string | null;
+  landmarks?: [number, number][] | null;
   onStart: () => void;
   onStop: () => void;
 }
@@ -26,9 +38,57 @@ export default function WebcamCapture({
   handDetected,
   cameraError,
   modelError,
+  landmarks,
   onStart,
   onStop,
 }: WebcamCaptureProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Draw skeleton on canvas whenever landmarks change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Size canvas to match its display size
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width || canvas.offsetWidth;
+    canvas.height = rect.height || canvas.offsetHeight;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!landmarks || landmarks.length < 21) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Mirror x to match the CSS scale-x-[-1] on the video
+    const x = (nx: number) => (1 - nx) * W;
+    const y = (ny: number) => ny * H;
+
+    // Draw connections
+    ctx.strokeStyle = '#00ff44';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    for (const [a, b] of CONNECTIONS) {
+      ctx.beginPath();
+      ctx.moveTo(x(landmarks[a][0]), y(landmarks[a][1]));
+      ctx.lineTo(x(landmarks[b][0]), y(landmarks[b][1]));
+      ctx.stroke();
+    }
+
+    // Draw landmark dots
+    for (let i = 0; i < 21; i++) {
+      const cx = x(landmarks[i][0]);
+      const cy = y(landmarks[i][1]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, i === 0 ? 5 : 3, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#ffffff' : '#ff3333';
+      ctx.fill();
+    }
+  }, [landmarks]);
+
   return (
     <div className="flex flex-col gap-3">
       {/* Video container */}
@@ -36,11 +96,17 @@ export default function WebcamCapture({
         <video
           ref={videoRef}
           className={cn(
-            'h-full w-full object-cover scale-x-[-1]', // mirror for natural feel
+            'h-full w-full object-cover scale-x-[-1]',
             !isReady && 'opacity-0'
           )}
           playsInline
           muted
+        />
+
+        {/* Skeleton overlay canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full pointer-events-none"
         />
 
         {/* Placeholder when off */}
@@ -55,8 +121,8 @@ export default function WebcamCapture({
         {isModelLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
             <Loader2 className="h-10 w-10 animate-spin text-primary-400" />
-            <p className="text-sm font-medium">Loading hand detection model…</p>
-            <p className="text-xs text-gray-400">First load may take a few seconds</p>
+            <p className="text-sm font-medium">Connecting to inference server…</p>
+            <p className="text-xs text-gray-400">Make sure the Python server is running on port 8000</p>
           </div>
         )}
 
@@ -117,7 +183,7 @@ export default function WebcamCapture({
         {isModelLoading ? (
           <>
             <Loader2 className="h-5 w-5 animate-spin" />
-            Loading model…
+            Connecting…
           </>
         ) : isRunning ? (
           <>

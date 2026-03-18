@@ -15,6 +15,7 @@ Run with:
 
 import json
 import os
+from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,7 +45,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Lazy-load predictor at startup so we fail fast if model files are missing.
 # ---------------------------------------------------------------------------
-_predictor: Predictor | None = None
+_predictor: Optional[Predictor] = None
 
 
 @app.on_event("startup")

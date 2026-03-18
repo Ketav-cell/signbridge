@@ -25,6 +25,7 @@ export interface HandDetectionState {
   handDetected: boolean;
   isModelLoading: boolean;
   error: string | null;
+  landmarks: [number, number][] | null;
 }
 
 export interface UseHandDetectionReturn extends HandDetectionState {
@@ -60,6 +61,7 @@ export function useHandDetection(): UseHandDetectionReturn {
     handDetected:   false,
     isModelLoading: false,
     error:          null,
+    landmarks:      null,
   });
 
   // Connect WebSocket
@@ -93,12 +95,14 @@ export function useHandDetection(): UseHandDetectionReturn {
         ws.onmessage = (event) => {
           waitingRef.current = false;
           try {
-            const result: { hand_detected: boolean; letter?: string | null; confidence?: number } =
+            const result: { hand_detected: boolean; letter?: string | null; confidence?: number; landmarks?: [number, number][] } =
               JSON.parse(event.data);
+
+            const landmarks = (result.landmarks && result.landmarks.length > 0) ? result.landmarks : null;
 
             if (!result.hand_detected) {
               windowRef.current = [];
-              setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0 }));
+              setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0, landmarks: null }));
               return;
             }
 
@@ -136,6 +140,7 @@ export function useHandDetection(): UseHandDetectionReturn {
               handDetected: true,
               letter:       stableLetter,
               confidence:   stableLetter ? bestConf : 0,
+              landmarks,
             }));
           } catch {
             // ignore malformed messages
@@ -194,7 +199,7 @@ export function useHandDetection(): UseHandDetectionReturn {
     windowRef.current = [];
     waitingRef.current = false;
     setIsRunning(false);
-    setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0 }));
+    setState((s) => ({ ...s, handDetected: false, letter: null, confidence: 0, landmarks: null }));
   }, []);
 
   useEffect(() => {

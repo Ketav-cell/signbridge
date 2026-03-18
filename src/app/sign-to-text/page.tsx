@@ -57,6 +57,7 @@ export default function SignToTextPage() {
     isRunning,
     startDetection,
     stopDetection,
+    landmarks,
   } = useHandDetection();
 
   // Word builder state
@@ -235,6 +236,7 @@ export default function SignToTextPage() {
             handDetected={handDetected}
             cameraError={cameraError}
             modelError={modelError}
+            landmarks={landmarks}
             onStart={handleStart}
             onStop={handleStop}
           />
