@@ -63,7 +63,7 @@ export default function WebcamCapture({
     const x = (nx: number) => (1 - nx) * W;
     const y = (ny: number) => ny * H;
 
-    ctx.strokeStyle = '#00ff44';
+    ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
     for (const [a, b] of CONNECTIONS) {
@@ -78,84 +78,70 @@ export default function WebcamCapture({
       const cy = y(landmarks[i][1]);
       ctx.beginPath();
       ctx.arc(cx, cy, i === 0 ? 5 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = i === 0 ? '#ffffff' : '#ff3333';
+      ctx.fillStyle = i === 0 ? '#ffffff' : '#0f172a';
       ctx.fill();
     }
   }, [landmarks]);
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative overflow-hidden rounded-2xl bg-gray-900 aspect-video">
-        <video
-          ref={videoRef}
-          className={cn(
-            'h-full w-full object-cover scale-x-[-1]',
-            !isReady && 'opacity-0'
+      <div className="surface-panel relative overflow-hidden p-3">
+        <div className="relative aspect-video overflow-hidden rounded-[24px] bg-slate-950">
+          <video
+            ref={videoRef}
+            className={cn('h-full w-full scale-x-[-1] object-cover', !isReady && 'opacity-0')}
+            playsInline
+            muted
+          />
+
+          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+
+          {!isReady && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400">
+              <CameraOff className="h-12 w-12" />
+              <p className="text-sm">Camera off</p>
+            </div>
           )}
-          playsInline
-          muted
-        />
 
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full pointer-events-none"
-        />
+          {isModelLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 px-4 text-center text-white">
+              <Loader2 className="h-10 w-10 animate-spin text-sky-400" />
+              <p className="text-sm font-medium">Loading hand detection model…</p>
+              <p className="text-xs text-gray-400">Downloading MediaPipe model (~7 MB, first load only)</p>
+            </div>
+          )}
 
-        {!isReady && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-500">
-            <CameraOff className="h-12 w-12" />
-            <p className="text-sm">Camera off</p>
-          </div>
-        )}
-
-        {isModelLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 text-white">
-            <Loader2 className="h-10 w-10 animate-spin text-primary-400" />
-            <p className="text-sm font-medium">Loading hand detection model…</p>
-            <p className="text-xs text-gray-400">Downloading MediaPipe model (~7 MB, first load only)</p>
-          </div>
-        )}
-
-        <AnimatePresence>
-          {isRunning && !isModelLoading && (
-            <motion.div
-              className="absolute left-3 top-3"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-            >
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
-                  handDetected
-                    ? 'bg-primary-600/90 text-white'
-                    : 'bg-black/50 text-gray-300'
-                )}
-              >
+          <AnimatePresence>
+            {isRunning && !isModelLoading && (
+              <motion.div className="absolute left-3 top-3" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}>
                 <span
                   className={cn(
-                    'h-2 w-2 rounded-full',
-                    handDetected ? 'animate-pulse bg-white' : 'bg-gray-500'
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-md',
+                    handDetected ? 'bg-white text-slate-950' : 'bg-black/40 text-gray-200'
                   )}
-                />
-                {handDetected ? 'Hand detected' : 'No hand'}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                >
+                  <span className={cn('h-2 w-2 rounded-full', handDetected ? 'animate-pulse bg-sky-500' : 'bg-gray-500')} />
+                  {handDetected ? 'Hand detected' : 'No hand'}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {isRunning && !isModelLoading && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-bold text-white">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-            REC
-          </span>
-        )}
+          {isRunning && !isModelLoading && (
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-xs font-semibold text-white">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+              REC
+            </span>
+          )}
+        </div>
       </div>
 
       {(cameraError || modelError) && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>{cameraError ?? modelError}</p>
+        <div className="rounded-[24px] border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm text-red-700 dark:border-red-900/80 dark:bg-red-950/30 dark:text-red-300">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{cameraError ?? modelError}</p>
+          </div>
         </div>
       )}
 

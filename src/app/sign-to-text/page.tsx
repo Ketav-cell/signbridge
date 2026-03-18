@@ -123,43 +123,40 @@ export default function SignToTextPage() {
   }, [handleBackspace, handleSpace, handleConfirmLetter]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-10">
       <Header />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
+        <div className="surface-panel p-6 sm:p-8">
           <Link
             href="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Link>
 
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-100 dark:bg-accent-900/40">
-              <Hand className="h-6 w-6 text-accent-600 dark:text-accent-400" />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <div className="hero-chip">
+                <Hand className="h-3.5 w-3.5" />
+                Camera-based ASL letter recognition
+              </div>
+              <h1 className="section-title mt-5">Sign to text, redesigned with more breathing room.</h1>
+              <p className="section-copy mt-3">
+                All recognition controls, keyboard shortcuts, stabilisation logic, and manual corrections stay intact — only the visual language is now cleaner and calmer.
+              </p>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-                Sign to Text
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Show ASL letters to your camera — we&apos;ll build the words
+            <div className="surface-subtle flex items-start gap-2 px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+              <p>
+                Sign letters one at a time. Use <strong>Space</strong> for word breaks, <strong>Backspace</strong> to remove the last letter, and <strong>C</strong> to confirm the current prediction instantly.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mb-6 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-300">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            Sign letters one at a time — each is confirmed after ~1 second.
-            Use <strong>Space</strong> to add word breaks and <strong>Backspace</strong> to correct mistakes.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <WebcamCapture
             videoRef={videoRef}
             isReady={isReady}
@@ -187,32 +184,29 @@ export default function SignToTextPage() {
           />
         </div>
 
-        <section className="mt-10 rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/40">
-          <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <section className="surface-panel mt-6 p-5 sm:p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
             How to use
           </h2>
-          <ol className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <li>
-              <span className="mr-1 font-bold text-primary-600">1.</span>
-              Click <strong>Start Recognition</strong> and allow camera access.
-            </li>
-            <li>
-              <span className="mr-1 font-bold text-primary-600">2.</span>
-              Hold an ASL letter sign steady — the ring fills as it stabilises (~1 s).
-            </li>
-            <li>
-              <span className="mr-1 font-bold text-primary-600">3.</span>
-              The letter is added automatically. Sign all letters without worrying about spaces.
-            </li>
-            <li>
-              <span className="mr-1 font-bold text-primary-600">4.</span>
-              <strong>Backspace</strong> removes the last letter, <strong>Space</strong> adds a word break, <strong>Clear</strong> resets everything.
-            </li>
+          <ol className="mt-4 grid gap-3 md:grid-cols-2">
+            {[
+              'Click Start Recognition and allow camera access.',
+              'Hold an ASL letter sign steady while the progress ring fills.',
+              'Letters are added automatically once stable; use C to confirm sooner.',
+              'Use Backspace, Space, or Clear to edit your output at any time.',
+            ].map((step, index) => (
+              <li key={step} className="surface-subtle flex gap-3 px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
           </ol>
         </section>
       </main>
 
-      <footer className="border-t border-gray-200 py-6 text-center text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+      <footer className="mt-6 px-4 text-center text-xs text-gray-500 dark:text-gray-400">
         <p>SignBridge &mdash; Breaking communication barriers with sign language</p>
       </footer>
     </div>

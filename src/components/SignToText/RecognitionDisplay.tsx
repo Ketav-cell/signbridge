@@ -36,23 +36,21 @@ export default function RecognitionDisplay({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* ── Current letter card ───────────────────────────────────────── */}
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-gray-200 bg-white px-6 py-8 dark:border-gray-700 dark:bg-gray-800">
-        {/* Circular progress ring + letter */}
-        <div className="relative flex h-28 w-28 items-center justify-center">
+      <div className="surface-panel flex flex-col items-center gap-5 px-6 py-8">
+        <div className="relative flex h-32 w-32 items-center justify-center">
           <svg className="absolute inset-0 -rotate-90" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="36" fill="none" stroke="currentColor" strokeWidth="4.5" className="text-gray-200 dark:text-gray-700" />
             <circle
-              cx="40" cy="40" r="36"
-              fill="none" stroke="currentColor" strokeWidth="5"
-              className="text-gray-200 dark:text-gray-700"
-            />
-            <circle
-              cx="40" cy="40" r="36"
-              fill="none" stroke="currentColor" strokeWidth="5"
+              cx="40"
+              cy="40"
+              r="36"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4.5"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - stableProgress)}
-              className="text-primary-500 transition-all duration-100"
+              className="text-sky-500 transition-all duration-100"
             />
           </svg>
 
@@ -60,10 +58,8 @@ export default function RecognitionDisplay({
             <motion.span
               key={currentLetter ?? 'empty'}
               className={cn(
-                'text-5xl font-bold tabular-nums',
-                currentLetter && handDetected
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-300 dark:text-gray-600'
+                'text-6xl font-semibold tracking-[-0.06em] tabular-nums',
+                currentLetter && handDetected ? 'text-gray-950 dark:text-white' : 'text-gray-300 dark:text-gray-600'
               )}
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -75,38 +71,28 @@ export default function RecognitionDisplay({
           </AnimatePresence>
         </div>
 
-        {/* Confidence bar */}
-        <div className="w-full max-w-[180px] space-y-1">
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="w-full max-w-[220px] space-y-2">
+          <div className="flex justify-between text-xs font-medium uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
             <span>Confidence</span>
             <span>{Math.round(confidence * 100)}%</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-            <div
-              className="h-full rounded-full bg-primary-500 transition-all duration-150"
-              style={{ width: `${confidence * 100}%` }}
-            />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            <div className="h-full rounded-full bg-slate-950 transition-all duration-150 dark:bg-white" style={{ width: `${confidence * 100}%` }} />
           </div>
         </div>
 
-        {!handDetected && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Show your hand to the camera
-          </p>
-        )}
-        {handDetected && stableProgress < 1 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Hold still — or tap the button below
-          </p>
-        )}
+        <div className="text-center text-xs text-gray-400 dark:text-gray-500">
+          {!handDetected && <p>Show your hand to the camera.</p>}
+          {handDetected && stableProgress < 1 && <p>Hold still or confirm manually.</p>}
+          {handDetected && stableProgress >= 1 && <p>Letter captured.</p>}
+        </div>
 
-        {/* Manual confirm — no need to hold steady */}
         <Button
           size="sm"
           variant="outline"
           onClick={onConfirmLetter}
           disabled={!currentLetter || !handDetected}
-          className="gap-1.5 text-xs"
+          className="gap-1.5"
           title="Add this letter now (key: C)"
         >
           <Check className="h-3.5 w-3.5" />
@@ -114,21 +100,18 @@ export default function RecognitionDisplay({
         </Button>
       </div>
 
-      {/* ── Raw letter stream ──────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-800">
-        <p className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+      <div className="surface-panel px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
           Signed letters
         </p>
-        <div className="flex min-h-[2.5rem] flex-wrap gap-1">
+        <div className="mt-3 flex min-h-[2.5rem] flex-wrap gap-2">
           {rawLetters.length === 0 ? (
-            <span className="text-sm text-gray-300 dark:text-gray-600">
-              (start signing…)
-            </span>
+            <span className="text-sm text-gray-300 dark:text-gray-600">Start signing…</span>
           ) : (
             rawLetters.split('').map((ch, i) => (
               <motion.span
                 key={i}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 text-sm font-bold text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white dark:bg-white dark:text-slate-950"
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.15 }}
@@ -140,55 +123,37 @@ export default function RecognitionDisplay({
         </div>
       </div>
 
-      {/* ── Action buttons ────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onBackspace}
-          disabled={rawLetters.length === 0}
-          className="gap-1.5"
-          title="Delete last letter (Backspace)"
-        >
+        <Button variant="outline" size="sm" onClick={onBackspace} disabled={rawLetters.length === 0} className="gap-1.5" title="Delete last letter (Backspace)">
           <Delete className="h-4 w-4" />
           Back
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onSpace}
-          disabled={rawLetters.length === 0}
-          className="gap-1.5"
-          title="Manual word break (Space)"
-        >
+        <Button variant="outline" size="sm" onClick={onSpace} disabled={rawLetters.length === 0} className="gap-1.5" title="Manual word break (Space)">
           <Space className="h-4 w-4" />
           Space
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClear}
-          className="gap-1.5"
-          title="Clear everything"
-        >
+        <Button variant="outline" size="sm" onClick={onClear} className="gap-1.5" title="Clear everything">
           <RotateCcw className="h-4 w-4" />
           Clear
         </Button>
       </div>
 
-      {/* ── Manual sentence (if user used Space) ─────────────────────── */}
-      {words.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-800">
-          <p className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
-            Manual words
-          </p>
-          <p className="text-base leading-relaxed text-gray-900 dark:text-white">
-            {words.join(' ')}
-            {currentWord && <span className="text-primary-500"> {currentWord}</span>}
-            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-primary-500" />
-          </p>
-        </div>
-      )}
+      <div className="surface-panel px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+          Manual words
+        </p>
+        <p className="mt-2 min-h-[2.5rem] text-base leading-relaxed text-gray-900 dark:text-white">
+          {words.length === 0 && !currentWord ? (
+            <span className="text-sm text-gray-300 dark:text-gray-600">Add spaces to separate full words.</span>
+          ) : (
+            <>
+              {words.join(' ')}
+              {currentWord && <span className="text-sky-500"> {currentWord}</span>}
+              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-sky-500" />
+            </>
+          )}
+        </p>
+      </div>
     </div>
   );
 }
