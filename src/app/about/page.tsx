@@ -10,37 +10,37 @@ import { Button } from '@/components/ui/button';
 
 const features = [
   {
-    title: 'Voice Recognition',
-    description: 'Speak in 15+ languages and SignBridge transcribes your words in real time using the Web Speech API built into your browser.',
+    title: 'Voice input',
+    description: 'Works with 15+ languages. Just speak and it picks up everything in real time through your browser.',
   },
   {
-    title: 'Multi-Language Translation',
-    description: 'Automatically translate from any supported language into English before mapping to ASL signs, so nothing is lost in translation.',
+    title: 'Language translation',
+    description: 'If you speak in Spanish, Hindi, French, or anything else — it translates to English first before mapping signs.',
   },
   {
-    title: 'ASL Sign Mapping',
-    description: 'Every English word is looked up in our ASL dictionary. Words not found are automatically fingerspelled letter by letter so you never miss a word.',
+    title: 'ASL sign mapping',
+    description: 'Looks up each word in our dictionary. If a word isn\'t there, it fingerspells it letter by letter so nothing gets skipped.',
   },
   {
-    title: 'Real-Time Playback',
-    description: 'Signs play back sequentially with adjustable speed (0.5x – 1.5x). Step through manually or let the auto-play sequence run.',
+    title: 'Playback controls',
+    description: 'Signs play one by one. You can adjust speed, skip around, pause, or reset whenever you want.',
   },
   {
-    title: 'Growing Dictionary',
-    description: 'Our dictionary covers greetings, pronouns, verbs, adjectives, numbers, colors, family, places, and more — with new signs added regularly.',
+    title: 'Sign dictionary',
+    description: 'Covers everyday words — greetings, numbers, colors, family, places, feelings. More get added over time.',
   },
   {
-    title: 'Accessibility First',
-    description: 'Dark mode, high-contrast support, and a clean interface designed so SignBridge works for everyone, everywhere.',
+    title: 'Sign to text',
+    description: 'Point your camera and sign ASL letters. The app reads your hand position and builds words from what it sees.',
   },
 ];
 
-const howItWorks = [
-  { step: '01', title: 'Tap the microphone', description: 'Press the mic button and start speaking. SignBridge listens continuously.' },
-  { step: '02', title: 'Speech is transcribed', description: 'Your browser converts your voice to text in real time using the Web Speech API.' },
-  { step: '03', title: 'Translated to English', description: 'If you spoke in another language, the text is automatically translated to English.' },
-  { step: '04', title: 'Mapped to ASL signs', description: 'Each English word is looked up in our dictionary or fingerspelled if not found.' },
-  { step: '05', title: 'Signs displayed', description: 'The sign sequence plays back with the hand shape description and gloss token.' },
+const steps = [
+  { n: '1', text: 'Hit the mic and start talking. It listens the whole time you speak.' },
+  { n: '2', text: 'Your speech gets converted to text live in the browser — no servers involved.' },
+  { n: '3', text: 'Non-English input gets translated to English automatically.' },
+  { n: '4', text: 'Each word gets matched to a sign. Unknown words get fingerspelled.' },
+  { n: '5', text: 'Signs play back in order. You control the speed and can step through manually.' },
 ];
 
 export default function AboutPage() {
@@ -48,108 +48,111 @@ export default function AboutPage() {
     <div className="flex min-h-screen flex-col pb-10">
       <Header />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="surface-panel p-6 sm:p-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+
+        <div className="mb-6">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            Back
           </Link>
+        </div>
 
-          <motion.div
-            className="mt-10 flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+        <motion.section
+          className="surface-panel p-8 sm:p-10"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <Image
               src="/logo.png"
-              alt="SignBridge logo"
-              width={100}
-              height={100}
-              className="rounded-2xl shrink-0 shadow-md"
+              alt="SignBridge"
+              width={88}
+              height={88}
+              className="rounded-2xl shadow-sm shrink-0"
             />
             <div>
-              <h1 className="section-title">About SignBridge</h1>
-              <p className="section-copy mt-3 max-w-2xl">
-                SignBridge is an open-source, real-time speech-to-sign-language translator built to break down communication barriers between hearing and Deaf/Hard-of-Hearing communities. The interface is intentionally minimal, but every core translation and accessibility feature stays in place.
+              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-gray-950 dark:text-white sm:text-4xl">
+                SignBridge
+              </h1>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-gray-500 dark:text-gray-400">
+                We built this because communicating across hearing and signing communities is harder than it needs to be. SignBridge takes what you say and turns it into sign language — live, in your browser, no installs required.
               </p>
             </div>
-          </motion.div>
-        </section>
+          </div>
+        </motion.section>
 
-        <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
-              className="surface-panel p-6"
-              initial={{ opacity: 0, y: 16 }}
+              className="surface-panel p-5"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
+              transition={{ delay: i * 0.05 }}
             >
-              <h3 className="font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">{f.title}</h3>
+              <p className="font-semibold text-gray-900 dark:text-white">{f.title}</p>
               <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">{f.description}</p>
             </motion.div>
           ))}
         </section>
 
         <section className="surface-panel mt-6 p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-gray-950 dark:text-white">How it works</h2>
-          <div className="mt-6 space-y-3">
-            {howItWorks.map((step, i) => (
+          <h2 className="text-xl font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">How it works</h2>
+          <div className="mt-5 space-y-3">
+            {steps.map((s, i) => (
               <motion.div
-                key={step.step}
-                className="surface-subtle flex gap-4 px-5 py-4"
-                initial={{ opacity: 0, x: -16 }}
+                key={s.n}
+                className="flex items-start gap-4"
+                initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.07 }}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white dark:bg-white dark:text-slate-950">
-                  {step.step}
-                </div>
-                <div className="flex flex-col justify-center">
-                  <h3 className="font-semibold text-gray-950 dark:text-white">{step.title}</h3>
-                  <p className="mt-0.5 text-sm leading-6 text-gray-500 dark:text-gray-400">{step.description}</p>
-                </div>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
+                  {s.n}
+                </span>
+                <p className="pt-0.5 text-sm leading-6 text-gray-600 dark:text-gray-300">{s.text}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="mt-6 grid gap-5 lg:grid-cols-2">
           <div className="surface-panel p-6">
-            <h2 className="text-lg font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">Built with</h2>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Zustand', 'MediaPipe', 'Web Speech API', 'Python FastAPI', 'TensorFlow'].map((tech) => (
+            <h2 className="font-semibold text-gray-950 dark:text-white">Stack</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Zustand', 'MediaPipe', 'Web Speech API', 'Python FastAPI', 'TensorFlow'].map((t) => (
                 <span
-                  key={tech}
-                  className="rounded-full border border-black/[0.06] bg-black/[0.02] px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-200"
+                  key={t}
+                  className="rounded-full border border-black/[0.06] bg-black/[0.02] px-3 py-1 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-300"
                 >
-                  {tech}
+                  {t}
                 </span>
               ))}
             </div>
           </div>
 
           <div className="rounded-[28px] border border-yellow-200/80 bg-yellow-50/90 p-6 dark:border-yellow-800/40 dark:bg-yellow-950/20">
-            <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Browser compatibility</h3>
+            <h2 className="font-semibold text-yellow-800 dark:text-yellow-200">Heads up</h2>
             <p className="mt-2 text-sm leading-6 text-yellow-700 dark:text-yellow-300">
-              SignBridge uses the Web Speech API for voice recognition, which is currently supported in <strong>Google Chrome</strong> and <strong>Microsoft Edge</strong>. Safari and Firefox have limited or no support for this API.
+              Voice recognition only works in <strong>Chrome</strong> or <strong>Edge</strong> right now. That's a browser limitation, not ours. Safari and Firefox don't support the Web Speech API yet.
             </p>
           </div>
         </section>
 
         <div className="mt-10 flex justify-center">
           <Button asChild size="lg">
-            <Link href="/">Try SignBridge now</Link>
+            <Link href="/">Try it out</Link>
           </Button>
         </div>
+
       </main>
 
       <footer className="mt-6 px-4 text-center text-xs text-gray-500 dark:text-gray-400">
-        <p>SignBridge &mdash; Breaking communication barriers with sign language</p>
+        SignBridge &mdash; open source, built for accessibility
       </footer>
     </div>
   );
