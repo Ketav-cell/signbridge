@@ -69,14 +69,14 @@ export default function VoiceInput() {
       try {
         let englishText = text;
 
-        if (settings.inputLanguage !== 'en' && settings.inputLanguage !== 'auto') {
+        if (settings.inputLanguage !== 'en') {
           const translateRes = await fetch('/api/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text,
-              sourceLanguage: settings.inputLanguage,
-              targetLanguage: 'en',
+              sourceLang: settings.inputLanguage,
+              targetLang: 'en',
             }),
           });
 

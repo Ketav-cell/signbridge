@@ -58,12 +58,29 @@ export async function translateText(
   return fallback;
 }
 
+const LANG_CODE_MAP: Record<string, string> = {
+  zh: 'zh-CN',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  ar: 'ar-SA',
+  hi: 'hi-IN',
+  pt: 'pt-BR',
+  tl: 'tl-PH',
+  sw: 'sw-KE',
+};
+
+function normalizeCode(code: string) {
+  return LANG_CODE_MAP[code] ?? code;
+}
+
 async function tryMyMemory(
   text: string,
   sourceLang: string,
   targetLang: string
 ): Promise<TranslationResult | null> {
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+  const src = normalizeCode(sourceLang);
+  const tgt = normalizeCode(targetLang);
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`;
   const response = await fetch(url);
 
   if (!response.ok) return null;

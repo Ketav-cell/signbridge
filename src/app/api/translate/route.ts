@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
 
-    const detectedLang = sourceLang === 'auto' ? await detectLanguage(text) : sourceLang;
+    const detectedLang = (!sourceLang || sourceLang === 'auto') ? await detectLanguage(text) : sourceLang;
 
     if (detectedLang === targetLang) {
       return NextResponse.json({
