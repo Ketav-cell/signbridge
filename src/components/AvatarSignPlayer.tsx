@@ -209,7 +209,6 @@ export default function AvatarSignPlayer({
       renderer.dispose();
       rendererRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -230,7 +229,6 @@ export default function AvatarSignPlayer({
         return () => clearInterval(interval);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSign, isPlaying, speed]);
 
   return (

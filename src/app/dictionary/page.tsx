@@ -144,7 +144,6 @@ export default function DictionaryPage() {
               >
                 <div className="mb-4 flex h-40 items-center justify-center overflow-hidden rounded-[24px] bg-black/[0.03] dark:bg-white/[0.04]">
                   {entry.mediaUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={entry.mediaUrl} alt={entry.glossToken} className="h-full w-full object-contain" loading="lazy" />
                   )}
                 </div>

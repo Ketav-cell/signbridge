@@ -37,7 +37,6 @@ export default function ISLSignPlayer({
 
   return (
     <div className={`relative flex items-center justify-center bg-white dark:bg-gray-900 ${className ?? ''}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={currentSign.mediaUrl}
         src={currentSign.mediaUrl}

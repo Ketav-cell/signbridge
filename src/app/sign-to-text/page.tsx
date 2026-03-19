@@ -77,7 +77,6 @@ export default function SignToTextPage() {
     if (isReady && !isRunning && videoRef.current) {
       startDetection(videoRef.current);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady]);
 
   const handleStop = useCallback(() => {

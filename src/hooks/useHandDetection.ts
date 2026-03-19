@@ -28,10 +28,8 @@ const MIN_VOTES       = 3;
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const WASM_PATH = '/tasks-vision-wasm';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let browserLandmarkerPromise: Promise<any> | null = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getBrowserLandmarker(): Promise<any> {
   if (browserLandmarkerPromise) return browserLandmarkerPromise;
   browserLandmarkerPromise = (async () => {
@@ -150,7 +148,6 @@ export function useHandDetection(): UseHandDetectionReturn {
 
   const startBrowserNative = useCallback(async (videoEl: HTMLVideoElement) => {
     setState((s) => ({ ...s, isModelLoading: true }));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let landmarker: any;
     try {
       landmarker = await getBrowserLandmarker();
@@ -172,7 +169,6 @@ export function useHandDetection(): UseHandDetectionReturn {
       if (now <= lastTs) return;
       lastTs = now;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const results: any = landmarker.detectForVideo(video, now);
       if (!results.landmarks || results.landmarks.length === 0) {
         windowRef.current = [];
@@ -180,10 +176,8 @@ export function useHandDetection(): UseHandDetectionReturn {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawLm = results.landmarks[0];
       const pts: [number, number][] = rawLm.map((p: { x: number; y: number }) => [p.x, p.y]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mirroredLm = rawLm.map((p: any) => ({ ...p, x: 1 - p.x }));
       const { letter, confidence } = classifyASLLetter(mirroredLm);
 
