@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Sun, Moon, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,10 +39,17 @@ export default function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/70 bg-white/75 px-3 py-3 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-black/30">
         <Link
           href="/"
-          className="rounded-full px-3 py-1.5 text-base font-semibold tracking-[-0.03em] text-gray-950 transition-opacity hover:opacity-80 dark:text-white"
+          className="flex items-center gap-2.5 rounded-full px-2 py-1 transition-opacity hover:opacity-80"
           aria-label="SignBridge home"
         >
-          SignBridge
+          <Image
+            src="/logo.png"
+            alt="SignBridge"
+            width={36}
+            height={36}
+            className="rounded-full"
+          />
+          <span className="text-base font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">SignBridge</span>
         </Link>
 
         <nav className="hidden items-center gap-1 rounded-full bg-black/[0.03] p-1 dark:bg-white/[0.04] md:flex" aria-label="Main navigation">
