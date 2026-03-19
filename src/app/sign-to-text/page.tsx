@@ -137,7 +137,7 @@ export default function SignToTextPage() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <h1 className="section-title">Sign to Text</h1>
+              <h1 className="section-title">ASL to Text</h1>
               <p className="section-copy mt-3">
                 All recognition controls, keyboard shortcuts, stabilisation logic, and manual corrections stay intact — only the visual language is now cleaner and calmer.
               </p>
