@@ -89,7 +89,7 @@ export default function WebcamCapture({
   return (
     <div className="flex flex-col gap-3">
       <div className="surface-panel relative overflow-hidden p-3">
-        <div className="relative aspect-video overflow-hidden rounded-[24px] bg-slate-950">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-slate-950">
           <video
             ref={videoRef}
             className={cn('h-full w-full scale-x-[-1] object-cover', !isReady && 'opacity-0')}
