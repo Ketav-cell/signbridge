@@ -96,11 +96,12 @@ function features(lm: Landmark[]) {
 
 type F = ReturnType<typeof features>;
 
-// A: fist, thumb rests at the SIDE of index (not over, not inside)
+// A: fist, thumb rests at the SIDE of index (not over, not inside, not touching tips)
 function scoreA(f: F) {
   if (f.numCurl < 3) return 0;
   if (f.thumbOverKnuckles) return 0;
   if (f.thumbUnderIndex || f.thumbUnderMiddle) return 0;
+  if (f.tiD < 0.50) return 0;
   let s = 50;
   if (f.numCurl >= 4) s += 20;
   if (f.tSide) s += 30;
