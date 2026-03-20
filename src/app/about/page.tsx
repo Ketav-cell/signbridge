@@ -8,32 +8,6 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 
-const features = [
-  {
-    title: 'Voice input',
-    description: 'Works with 15+ languages. Just speak and it picks up everything in real time through your browser.',
-  },
-  {
-    title: 'Language translation',
-    description: 'If you speak in Spanish, Hindi, French, or anything else — it translates to English first before mapping signs.',
-  },
-  {
-    title: 'ASL sign mapping',
-    description: 'Looks up each word in our dictionary. If a word isn\'t there, it fingerspells it letter by letter so nothing gets skipped.',
-  },
-  {
-    title: 'Playback controls',
-    description: 'Signs play one by one. You can adjust speed, skip around, pause, or reset whenever you want.',
-  },
-  {
-    title: 'Sign dictionary',
-    description: 'Covers everyday words — greetings, numbers, colors, family, places, feelings. More get added over time.',
-  },
-  {
-    title: 'Sign to text',
-    description: 'Point your camera and sign ASL letters. The app reads your hand position and builds words from what it sees.',
-  },
-];
 
 const steps = [
   { n: '1', text: 'Hit the mic and start talking. It listens the whole time you speak.' },
@@ -85,21 +59,6 @@ export default function AboutPage() {
           </div>
         </motion.section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              className="surface-panel p-5"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <p className="font-semibold text-gray-900 dark:text-white">{f.title}</p>
-              <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">{f.description}</p>
-            </motion.div>
-          ))}
-        </section>
-
         <section className="surface-panel mt-6 p-6 sm:p-8">
           <h2 className="text-xl font-semibold tracking-[-0.03em] text-gray-950 dark:text-white">How it works</h2>
           <div className="mt-5 space-y-3">
@@ -120,26 +79,17 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-5 lg:grid-cols-2">
-          <div className="surface-panel p-6">
-            <h2 className="font-semibold text-gray-950 dark:text-white">Stack</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Zustand', 'MediaPipe', 'Web Speech API', 'Python FastAPI', 'TensorFlow'].map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full border border-black/[0.06] bg-black/[0.02] px-3 py-1 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-300"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-yellow-200/80 bg-yellow-50/90 p-6 dark:border-yellow-800/40 dark:bg-yellow-950/20">
-            <h2 className="font-semibold text-yellow-800 dark:text-yellow-200">Heads up</h2>
-            <p className="mt-2 text-sm leading-6 text-yellow-700 dark:text-yellow-300">
-              Voice recognition only works in <strong>Chrome</strong> or <strong>Edge</strong> right now. That's a browser limitation, not ours. Safari and Firefox don't support the Web Speech API yet.
-            </p>
+        <section className="mt-6 surface-panel p-6">
+          <h2 className="font-semibold text-gray-950 dark:text-white">Stack</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'Framer Motion', 'Zustand', 'MediaPipe', 'Web Speech API', 'Python FastAPI', 'TensorFlow'].map((t) => (
+              <span
+                key={t}
+                className="rounded-full border border-black/[0.06] bg-black/[0.02] px-3 py-1 text-xs font-medium text-gray-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-300"
+              >
+                {t}
+              </span>
+            ))}
           </div>
         </section>
 

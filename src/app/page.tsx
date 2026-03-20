@@ -92,9 +92,6 @@ export default function HomePage() {
                   Start or stop recording without changing the translation flow.
                 </p>
               </div>
-              <span className="rounded-full bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-600 dark:text-sky-300">
-                Preserve all features
-              </span>
             </div>
             <VoiceInput />
           </div>
