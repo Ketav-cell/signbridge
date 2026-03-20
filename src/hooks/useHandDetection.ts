@@ -117,7 +117,7 @@ export function useHandDetection(): UseHandDetectionReturn {
               confidence:   rawConf,
               landmarks:    lm,
             }));
-          } catch { /* ignore */ }
+          } catch {}
         };
 
         ws.onclose = () => { wsRef.current = null; };

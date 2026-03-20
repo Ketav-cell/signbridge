@@ -67,10 +67,8 @@ function features(lm: Landmark[]) {
   const trD = d(tTip, lm[IDX.R_TIP]) / pw;
   const imD = d(lm[IDX.I_TIP], lm[IDX.M_TIP]) / pw;
 
-  // Thumb clearly above the knuckle peaks (PIP level) — true only for S
   const thumbOverKnuckles = tTip.y < lm[IDX.I_PIP].y - pw * 0.10;
 
-  // Thumb tucked inside the fist (below MCP line) — true for T, N, M
   const thumbUnderIndex  = tTip.y > lm[IDX.I_MCP].y + pw * 0.05 &&
                            d(tTip, lm[IDX.I_MCP]) / pw < 0.55;
   const thumbUnderMiddle = tTip.y > lm[IDX.M_MCP].y + pw * 0.05 &&
@@ -96,7 +94,6 @@ function features(lm: Landmark[]) {
 
 type F = ReturnType<typeof features>;
 
-// A: fist, thumb rests at the SIDE of index (not over, not inside, not touching tips)
 function scoreA(f: F) {
   if (f.numCurl < 3) return 0;
   if (f.thumbOverKnuckles) return 0;
@@ -108,7 +105,6 @@ function scoreA(f: F) {
   return s;
 }
 
-// B: flat open hand, all fingers extended up, thumb tucked in
 function scoreB(f: F) {
   if (f.numUp < 3) return 0;
   if (f.thumbOverKnuckles) return 0;
@@ -118,7 +114,6 @@ function scoreB(f: F) {
   return s;
 }
 
-// C: curved fingers and thumb forming a C shape
 function scoreC(f: F) {
   const allMid = [f.iE, f.mE, f.rE, f.pE].every(e => e > 0.10 && e < 0.85);
   if (!allMid) return 0;
@@ -130,7 +125,6 @@ function scoreC(f: F) {
   return s;
 }
 
-// D: index up, other fingers curl to meet thumb
 function scoreD(f: F) {
   if (!f.iUp) return 0;
   if (f.mUp || f.rUp || f.pUp) return 0;
@@ -141,7 +135,6 @@ function scoreD(f: F) {
   return s;
 }
 
-// E: all fingers hooked/bent, curled down toward palm
 function scoreE(f: F) {
   if (f.numUp > 0) return 0;
   const hookCount = [f.iHook, f.mHook, f.rHook].filter(Boolean).length;
@@ -152,7 +145,6 @@ function scoreE(f: F) {
   return s;
 }
 
-// F: middle, ring, pinky up; index touches thumb
 function scoreF(f: F) {
   if (!f.mUp || !f.rUp || !f.pUp) return 0;
   if (f.iUp) return 0;
@@ -162,7 +154,6 @@ function scoreF(f: F) {
   return s;
 }
 
-// I: only pinky up, others curled
 function scoreI(f: F) {
   if (!f.pUp) return 0;
   if (f.iUp || f.mUp || f.rUp) return 0;
@@ -172,7 +163,6 @@ function scoreI(f: F) {
   return s;
 }
 
-// K: index up, middle angled, thumb pointing up between them
 function scoreK(f: F) {
   if (!f.iUp || !f.mUp) return 0;
   if (f.rUp || f.pUp) return 0;
@@ -183,7 +173,6 @@ function scoreK(f: F) {
   return s;
 }
 
-// L: index up and thumb out to side forming L shape
 function scoreL(f: F) {
   if (!f.iUp) return 0;
   if (f.mUp || f.rUp || f.pUp) return 0;
@@ -194,7 +183,6 @@ function scoreL(f: F) {
   return s;
 }
 
-// M: fist with thumb tucked under index + middle + ring
 function scoreM(f: F) {
   if (f.numCurl < 3) return 0;
   if (f.thumbOverKnuckles) return 0;
@@ -206,7 +194,6 @@ function scoreM(f: F) {
   return s;
 }
 
-// N: fist with thumb tucked under index + middle (not ring)
 function scoreN(f: F) {
   if (f.numCurl < 2) return 0;
   if (f.thumbOverKnuckles) return 0;
@@ -218,7 +205,6 @@ function scoreN(f: F) {
   return s;
 }
 
-// O: all fingers curved to meet thumb forming an O circle
 function scoreO(f: F) {
   if (f.numUp > 1) return 0;
   if (f.tiD > 0.55) return 0;
@@ -258,7 +244,6 @@ function scoreR(f: F) {
   return s;
 }
 
-// S: fist with thumb pressed OVER all fingers from front
 function scoreS(f: F) {
   if (f.numCurl < 3) return 0;
   if (!f.thumbOverKnuckles) return 0;
@@ -268,7 +253,6 @@ function scoreS(f: F) {
   return s;
 }
 
-// T: fist with thumb tucked under index only
 function scoreT(f: F) {
   if (f.numCurl < 2) return 0;
   if (f.thumbOverKnuckles) return 0;
@@ -290,7 +274,6 @@ function scoreU(f: F) {
   return s;
 }
 
-// V: index and middle up and SPREAD, thumb not up (else K)
 function scoreV(f: F) {
   if (!f.iUp || !f.mUp) return 0;
   if (f.rUp || f.pUp) return 0;
@@ -336,7 +319,6 @@ function scoreGWithLm(f: F, lm: Landmark[]) {
   return s;
 }
 
-// H: index and middle pointing SIDEWAYS (horizontal), not upward
 function scoreHWithLm(f: F, lm: Landmark[], pw: number) {
   if (f.iUp || f.mUp) return 0;
   if (f.rUp || f.pUp) return 0;
