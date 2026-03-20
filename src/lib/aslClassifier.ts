@@ -112,21 +112,21 @@ function scoreB(f: F) {
 }
 
 function scoreC(f: F) {
-  const allMid = [f.iE, f.mE, f.rE, f.pE].every(e => e > 0.15 && e < 0.80);
+  const allMid = [f.iE, f.mE, f.rE, f.pE].every(e => e > 0.10 && e < 0.85);
   if (!allMid) return 0;
   if (f.numUp > 1) return 0;
-  let s = 40;
-  if (f.tiD > 0.40 && f.tiD < 1.2) s += 25;
+  let s = 50;
+  if (f.tiD > 0.35 && f.tiD < 1.3) s += 25;
   if (f.tSide) s += 15;
-  if (f.numCurl <= 1) s += 20;
+  if (f.numCurl <= 2) s += 15;
   return s;
 }
 
 function scoreD(f: F) {
   if (!f.iUp) return 0;
   if (f.mUp || f.rUp || f.pUp) return 0;
-  let s = 40;
-  if (f.mCurl && f.rCurl && f.pCurl) s += 20;
+  let s = 50;
+  if (f.mCurl && f.rCurl && f.pCurl) s += 25;
   if (f.tmD < 0.55 || f.trD < 0.55) s += 30;
   if (!f.tSide) s += 10;
   return s;
@@ -274,8 +274,8 @@ function scoreU(f: F) {
 function scoreV(f: F) {
   if (!f.iUp || !f.mUp) return 0;
   if (f.rUp || f.pUp) return 0;
-  let s = 30;
-  if (f.imD > 0.50) s += 40;
+  let s = 40;
+  if (f.imD > 0.40) s += 40;
   if (f.rCurl && f.pCurl) s += 20;
   return s;
 }
@@ -316,6 +316,7 @@ function scoreGWithLm(f: F, lm: Landmark[]) {
 }
 
 function scoreHWithLm(f: F, lm: Landmark[], pw: number) {
+  if (f.iUp || f.mUp) return 0;
   if (f.rUp || f.pUp) return 0;
   if (f.iE < 0.25 && f.mE < 0.25) return 0;
   let s = 20;
@@ -323,7 +324,6 @@ function scoreHWithLm(f: F, lm: Landmark[], pw: number) {
   if (heightDiff < 0.30) s += 30;
   if (f.iE > 0.30 && f.mE > 0.30) s += 20;
   if (f.rCurl && f.pCurl) s += 20;
-  if (!f.iUp && !f.mUp) s += 10;
   return s;
 }
 
