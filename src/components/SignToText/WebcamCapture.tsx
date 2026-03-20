@@ -51,48 +51,53 @@ export default function WebcamCapture({
 
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = (rect.width || canvas.offsetWidth) * dpr;
-    canvas.height = (rect.height || canvas.offsetHeight) * dpr;
-    ctx.scale(dpr, dpr);
+    const W = rect.width || canvas.offsetWidth;
+    const H = rect.height || canvas.offsetHeight;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
 
     if (!landmarks || landmarks.length < 21) return;
 
-    const rect2 = canvas.getBoundingClientRect();
-    const W = rect2.width || canvas.offsetWidth;
-    const H = rect2.height || canvas.offsetHeight;
+    const vid = videoRef.current;
+    const vw = vid?.videoWidth || W;
+    const vh = vid?.videoHeight || H;
 
-    const x = (nx: number) => (1 - nx) * W;
-    const y = (ny: number) => ny * H;
+    const scale = Math.min(W / vw, H / vh);
+    const ox = (W - vw * scale) / 2;
+    const oy = (H - vh * scale) / 2;
+    const vdw = vw * scale;
+
+    const px = (nx: number) => (1 - nx) * vdw + ox;
+    const py = (ny: number) => ny * vh * scale + oy;
 
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
     for (const [a, b] of CONNECTIONS) {
       ctx.beginPath();
-      ctx.moveTo(x(landmarks[a][0]), y(landmarks[a][1]));
-      ctx.lineTo(x(landmarks[b][0]), y(landmarks[b][1]));
+      ctx.moveTo(px(landmarks[a][0]), py(landmarks[a][1]));
+      ctx.lineTo(px(landmarks[b][0]), py(landmarks[b][1]));
       ctx.stroke();
     }
 
     for (let i = 0; i < 21; i++) {
-      const cx = x(landmarks[i][0]);
-      const cy = y(landmarks[i][1]);
       ctx.beginPath();
-      ctx.arc(cx, cy, i === 0 ? 5 : 3, 0, Math.PI * 2);
+      ctx.arc(px(landmarks[i][0]), py(landmarks[i][1]), i === 0 ? 5 : 3, 0, Math.PI * 2);
       ctx.fillStyle = i === 0 ? '#ffffff' : '#0f172a';
       ctx.fill();
     }
-  }, [landmarks]);
+  }, [landmarks, videoRef]);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="surface-panel relative overflow-hidden p-3">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-slate-950">
+        <div className="relative overflow-hidden rounded-[24px] bg-slate-950">
           <video
             ref={videoRef}
-            className={cn('h-full w-full scale-x-[-1] object-cover', !isReady && 'opacity-0')}
+            className={cn('block w-full scale-x-[-1] object-contain', !isReady && 'opacity-0')}
             playsInline
             autoPlay
             muted
@@ -101,7 +106,7 @@ export default function WebcamCapture({
           <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
           {!isReady && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400" style={{ minHeight: '240px' }}>
               <CameraOff className="h-12 w-12" />
               <p className="text-sm">Camera off</p>
             </div>
