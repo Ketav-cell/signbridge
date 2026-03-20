@@ -7,7 +7,7 @@ import Header from '@/components/Header';
 import WebcamCapture from '@/components/SignToText/WebcamCapture';
 import RecognitionDisplay from '@/components/SignToText/RecognitionDisplay';
 import { useWebcam } from '@/hooks/useWebcam';
-import { useHandDetection } from '@/hooks/useHandDetection';
+import { useHandTracker } from '@/hooks/useHandTracker';
 
 const STABLE_THRESHOLD = 3;
 const COOLDOWN_FRAMES = 5;
@@ -25,7 +25,7 @@ export default function SignToTextPage() {
     startDetection,
     stopDetection,
     landmarks,
-  } = useHandDetection();
+  } = useHandTracker();
 
   const [currentWord, setCurrentWord] = useState('');
   const [words, setWords] = useState<string[]>([]);

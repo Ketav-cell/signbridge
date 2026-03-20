@@ -6,7 +6,7 @@ export interface RecognitionResult {
   handDetected: boolean;
 }
 
-interface UseSignRecognitionReturn {
+interface UseSignReaderReturn {
   result: RecognitionResult;
   isConnected: boolean;
   isRunning: boolean;
@@ -24,7 +24,7 @@ const FRAME_INTERVAL = 150;
 
 const JPEG_QUALITY = 0.7;
 
-export function useSignRecognition(): UseSignRecognitionReturn {
+export function useSignReader(): UseSignReaderReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const offscreenCanvas = useRef<HTMLCanvasElement | null>(null);

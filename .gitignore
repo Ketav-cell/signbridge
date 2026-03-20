@@ -1,5 +1,7 @@
 # dependencies
 node_modules/
+venv/
+inference/models/
 .pnp
 .pnp.js
 

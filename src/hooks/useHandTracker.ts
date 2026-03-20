@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { classifyASLLetter } from '@/lib/aslClassifier';
+import { classifyASLLetter } from '@/lib/gestureScorer';
 
 export interface HandDetectionState {
   letter: string | null;
@@ -10,13 +10,13 @@ export interface HandDetectionState {
   landmarks: [number, number][] | null;
 }
 
-export interface UseHandDetectionReturn extends HandDetectionState {
+export interface UseHandTrackerReturn extends HandDetectionState {
   isRunning: boolean;
   startDetection: (videoEl: HTMLVideoElement) => Promise<void>;
   stopDetection: () => void;
 }
 
-export type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
+export type { ClassifyResult, Landmark } from '@/lib/gestureScorer';
 
 const WS_URL          = 'ws://localhost:8000/ws';
 const WS_TIMEOUT_MS   = 2000;
@@ -52,7 +52,7 @@ async function getBrowserLandmarker(): Promise<any> {
   return browserLandmarkerPromise;
 }
 
-export function useHandDetection(): UseHandDetectionReturn {
+export function useHandTracker(): UseHandTrackerReturn {
   const videoRef    = useRef<HTMLVideoElement | null>(null);
   const wsRef       = useRef<WebSocket | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);

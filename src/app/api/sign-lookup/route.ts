@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processText } from '@/lib/signMappingEngine';
+import { processText } from '@/lib/signMapper';
 
 export async function POST(request: NextRequest) {
   try {
