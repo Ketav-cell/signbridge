@@ -18,24 +18,53 @@ export function useWebcam(): UseWebcamReturn {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' },
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user',
+        },
         audio: false,
       });
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        videoRef.current.setAttribute('playsinline', 'true');
+        try {
+          await videoRef.current.play();
+        } catch {
+          await new Promise<void>((resolve) => {
+            if (!videoRef.current) return resolve();
+            videoRef.current.oncanplay = async () => {
+              await videoRef.current!.play();
+              resolve();
+            };
+          });
+        }
         setIsReady(true);
       }
     } catch (err) {
-      const msg =
-        err instanceof DOMException && err.name === 'NotAllowedError'
-          ? 'Camera access was denied. Please allow camera permissions in your browser.'
-          : err instanceof Error
-          ? err.message
-          : 'Failed to access camera.';
-      setError(msg);
+      if (err instanceof DOMException && err.name === 'NotAllowedError') {
+        setError('Camera access was denied. Please allow camera permissions in your browser.');
+      } else if (err instanceof DOMException && err.name === 'OverconstrainedError') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false,
+          });
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.setAttribute('playsinline', 'true');
+            await videoRef.current.play();
+            setIsReady(true);
+          }
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to access camera.');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to access camera.');
+      }
     }
   }, []);
 

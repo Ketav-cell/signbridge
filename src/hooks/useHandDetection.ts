@@ -20,7 +20,7 @@ export type { ClassifyResult, Landmark } from '@/lib/aslClassifier';
 
 const WS_URL          = 'ws://localhost:8000/ws';
 const WS_TIMEOUT_MS   = 2000;
-const DETECT_INTERVAL = 120;
+const DETECT_INTERVAL = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 180 : 120;
 const MIN_CONFIDENCE  = 0.05;
 const WINDOW_SIZE     = 7;
 const MIN_VOTES       = 3;

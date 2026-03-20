@@ -50,15 +50,18 @@ export default function WebcamCapture({
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width || canvas.offsetWidth;
-    canvas.height = rect.height || canvas.offsetHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = (rect.width || canvas.offsetWidth) * dpr;
+    canvas.height = (rect.height || canvas.offsetHeight) * dpr;
+    ctx.scale(dpr, dpr);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!landmarks || landmarks.length < 21) return;
 
-    const W = canvas.width;
-    const H = canvas.height;
+    const rect2 = canvas.getBoundingClientRect();
+    const W = rect2.width || canvas.offsetWidth;
+    const H = rect2.height || canvas.offsetHeight;
 
     const x = (nx: number) => (1 - nx) * W;
     const y = (ny: number) => ny * H;
@@ -91,6 +94,7 @@ export default function WebcamCapture({
             ref={videoRef}
             className={cn('h-full w-full scale-x-[-1] object-cover', !isReady && 'opacity-0')}
             playsInline
+            autoPlay
             muted
           />
 
