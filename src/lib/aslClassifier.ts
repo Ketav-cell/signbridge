@@ -25,7 +25,7 @@ function ext(lm: Landmark[], tip: number, mcp: number): number {
 }
 
 function tipAbovePip(lm: Landmark[], tip: number, pip: number) {
-  return lm[tip].y < lm[pip].y - 0.015;
+  return lm[tip].y < lm[pip].y - 0.005;
 }
 
 function hooked(lm: Landmark[], tip: number, pip: number, mcp: number) {
@@ -104,19 +104,21 @@ function scoreA(f: F) {
 
 function scoreB(f: F) {
   if (f.numUp < 3) return 0;
+  if (f.thumbOverKnuckles) return 0;
+  if (f.numCurl > 1) return 0;
   let s = 30 + f.numUp * 15;
   if (!f.tSide && !f.tUp) s += 10;
   return s;
 }
 
 function scoreC(f: F) {
-  const allMid = [f.iE, f.mE, f.rE, f.pE].every(e => e > 0.2 && e < 0.75);
+  const allMid = [f.iE, f.mE, f.rE, f.pE].every(e => e > 0.15 && e < 0.80);
   if (!allMid) return 0;
-  if (f.numUp > 0) return 0;
+  if (f.numUp > 1) return 0;
   let s = 40;
-  if (f.tiD > 0.45 && f.tiD < 1.0) s += 25;
+  if (f.tiD > 0.40 && f.tiD < 1.2) s += 25;
   if (f.tSide) s += 15;
-  if (f.numCurl === 0) s += 20;
+  if (f.numCurl <= 1) s += 20;
   return s;
 }
 
@@ -303,10 +305,11 @@ function scoreY(f: F) {
 
 function scoreGWithLm(f: F, lm: Landmark[]) {
   if (f.mUp || f.rUp || f.pUp) return 0;
+  if (f.numCurl < 2) return 0;
   let s = 20;
   const dy = Math.abs(lm[IDX.I_TIP].y - lm[IDX.I_MCP].y);
   const dx = Math.abs(lm[IDX.I_TIP].x - lm[IDX.I_MCP].x);
-  if (dx > dy) s += 35;
+  if (dx > dy * 1.3) s += 35;
   if (f.tSide) s += 25;
   if (f.mCurl && f.rCurl && f.pCurl) s += 20;
   return s;
