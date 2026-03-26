@@ -1,0 +1,18 @@
+[
+  { "code": "auto", "name": "Auto-detect", "nativeName": "Auto-detect", "speechCode": "" },
+  { "code": "en", "name": "English", "nativeName": "English", "speechCode": "en-US" },
+  { "code": "es", "name": "Spanish", "nativeName": "Español", "speechCode": "es-ES" },
+  { "code": "fr", "name": "French", "nativeName": "Français", "speechCode": "fr-FR" },
+  { "code": "de", "name": "German", "nativeName": "Deutsch", "speechCode": "de-DE" },
+  { "code": "zh", "name": "Mandarin Chinese", "nativeName": "中文", "speechCode": "zh-CN" },
+  { "code": "hi", "name": "Hindi", "nativeName": "हिन्दी", "speechCode": "hi-IN" },
+  { "code": "ar", "name": "Arabic", "nativeName": "العربية", "speechCode": "ar-SA" },
+  { "code": "ja", "name": "Japanese", "nativeName": "日本語", "speechCode": "ja-JP" },
+  { "code": "ko", "name": "Korean", "nativeName": "한국어", "speechCode": "ko-KR" },
+  { "code": "pt", "name": "Portuguese", "nativeName": "Português", "speechCode": "pt-BR" },
+  { "code": "ru", "name": "Russian", "nativeName": "Русский", "speechCode": "ru-RU" },
+  { "code": "it", "name": "Italian", "nativeName": "Italiano", "speechCode": "it-IT" },
+  { "code": "sw", "name": "Swahili", "nativeName": "Kiswahili", "speechCode": "sw-KE" },
+  { "code": "tl", "name": "Tagalog", "nativeName": "Tagalog", "speechCode": "fil-PH" },
+  { "code": "ta", "name": "Tamil", "nativeName": "தமிழ்", "speechCode": "ta-IN" }
+]
